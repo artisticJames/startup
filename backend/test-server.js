@@ -6,7 +6,7 @@ require('dotenv').config({ path: './config.env' });
 
 const app = express();
 const { state, loadUsers, saveUsers, loadPosts, savePosts, loadComments, saveComments } = require('./storage');
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // Storage backed by MongoDB if MONGODB_URI is set, else file fallback
 
