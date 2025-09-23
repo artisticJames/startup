@@ -25,6 +25,30 @@ async function connectMongoIfAvailable() {
   await collections.users.createIndex({ email: 1 }, { unique: true });
   await collections.posts.createIndex({ id: 1 }, { unique: true });
   await collections.comments.createIndex({ id: 1 }, { unique: true });
+
+  // Seed from JSON files if collections are empty
+  const usersCount = await collections.users.estimatedDocumentCount();
+  if (usersCount === 0 && fs.existsSync(usersFile)) {
+    try {
+      const usersObj = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+      const users = Object.values(usersObj);
+      if (users.length) await collections.users.insertMany(users, { ordered: false });
+    } catch (_) {}
+  }
+  const postsCount = await collections.posts.estimatedDocumentCount();
+  if (postsCount === 0 && fs.existsSync(postsFile)) {
+    try {
+      const posts = JSON.parse(fs.readFileSync(postsFile, 'utf8'));
+      if (Array.isArray(posts) && posts.length) await collections.posts.insertMany(posts, { ordered: false });
+    } catch (_) {}
+  }
+  const commentsCount = await collections.comments.estimatedDocumentCount();
+  if (commentsCount === 0 && fs.existsSync(commentsFile)) {
+    try {
+      const comments = JSON.parse(fs.readFileSync(commentsFile, 'utf8'));
+      if (Array.isArray(comments) && comments.length) await collections.comments.insertMany(comments, { ordered: false });
+    } catch (_) {}
+  }
   return { mode: 'mongo' };
 }
 
