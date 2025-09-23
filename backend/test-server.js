@@ -5,57 +5,12 @@ const path = require('path');
 require('dotenv').config({ path: './config.env' });
 
 const app = express();
+const { state, loadUsers, saveUsers, loadPosts, savePosts, loadComments, saveComments } = require('./storage');
 const PORT = 3000;
 
-// Simple file-based storage for registered users
-const usersFile = path.join(__dirname, 'registered-users.json');
+// Storage backed by MongoDB if MONGODB_URI is set, else file fallback
 
-// Load registered users from file
-function loadUsers() {
-  try {
-    if (fs.existsSync(usersFile)) {
-      const data = fs.readFileSync(usersFile, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.log('Error loading users:', error.message);
-  }
-  return {};
-}
-
-// Save users to file
-function saveUsers(users) {
-  try {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-  } catch (error) {
-    console.log('Error saving users:', error.message);
-  }
-}
-
-// Comments storage
-const commentsFile = path.join(__dirname, 'comments.json');
-
-// Load comments from file
-function loadComments() {
-  try {
-    if (fs.existsSync(commentsFile)) {
-      const data = fs.readFileSync(commentsFile, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.log('Error loading comments:', error.message);
-  }
-  return [];
-}
-
-// Save comments to file
-function saveComments(comments) {
-  try {
-    fs.writeFileSync(commentsFile, JSON.stringify(comments, null, 2));
-  } catch (error) {
-    console.log('Error saving comments:', error.message);
-  }
-}
+// Comments storage handled by storage module
 
 // Simple middleware
 app.use(express.json({ limit: '50mb' })); // Increase payload size limit
@@ -168,7 +123,7 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Name, email, and password are required' });
     }
 
-    const users = loadUsers();
+    const users = await loadUsers();
     
     // Check if user already exists
     if (users[email]) {
@@ -209,7 +164,7 @@ app.post('/api/verify-email', async (req, res) => {
   try {
     const { email, verification_code } = req.body;
     
-    const users = loadUsers();
+    const users = await loadUsers();
     const user = users[email];
     
     if (!user) {
@@ -218,7 +173,7 @@ app.post('/api/verify-email', async (req, res) => {
 
     // For testing, accept any verification code
     user.verified = true;
-    saveUsers(users);
+    await saveUsers(users);
 
     res.json({
       message: 'Email verified successfully',
@@ -244,7 +199,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const users = loadUsers();
+    const users = await loadUsers();
     const user = users[email];
     
     if (!user) {
@@ -278,7 +233,7 @@ app.put('/api/profile', async (req, res) => {
       return res.status(400).json({ error: 'Email and name are required' });
     }
 
-    const users = loadUsers();
+    const users = await loadUsers();
     const user = users[email];
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -288,7 +243,7 @@ app.put('/api/profile', async (req, res) => {
     if (profile_picture) {
       user.profile_picture = profile_picture;
     }
-    saveUsers(users);
+    await saveUsers(users);
 
     return res.json({
       message: 'Profile updated successfully',
@@ -352,35 +307,12 @@ app.post('/api/admin/ban/:userEmail', async (req, res) => {
   }
 });
 
-// Posts storage
-const postsFile = path.join(__dirname, 'posts.json');
-
-// Load posts from file
-function loadPosts() {
-  try {
-    if (fs.existsSync(postsFile)) {
-      const data = fs.readFileSync(postsFile, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.log('Error loading posts:', error.message);
-  }
-  return [];
-}
-
-// Save posts to file
-function savePosts(posts) {
-  try {
-    fs.writeFileSync(postsFile, JSON.stringify(posts, null, 2));
-  } catch (error) {
-    console.log('Error saving posts:', error.message);
-  }
-}
+// Posts storage handled by storage module
 
 // Get posts endpoint
 app.get('/api/posts', async (req, res) => {
   try {
-    let posts = loadPosts();
+    let posts = await loadPosts();
     
     // If no posts exist, create some sample posts
     if (posts.length === 0) {
@@ -410,11 +342,11 @@ app.get('/api/posts', async (req, res) => {
           attachments: []
         }
       ];
-      savePosts(posts);
+      await savePosts(posts);
     }
     
     // Load comments and attach them to posts
-    const comments = loadComments();
+    const comments = await loadComments();
     const postsWithComments = posts.map(post => ({
       ...post,
       comments: comments.filter(comment => comment.post_id === post.id)
@@ -456,9 +388,9 @@ app.post('/api/posts', async (req, res) => {
     };
     
     // Load existing posts and add new one
-    const posts = loadPosts();
+    const posts = await loadPosts();
     posts.unshift(newPost); // Add to beginning
-    savePosts(posts);
+    await savePosts(posts);
     
     res.json({ 
       message: 'Post created successfully',
@@ -472,7 +404,7 @@ app.post('/api/posts', async (req, res) => {
 // Comments endpoint for admin
 app.get('/api/comments', async (req, res) => {
   try {
-    const comments = loadComments();
+    const comments = await loadComments();
     res.json({ comments: comments });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -512,7 +444,7 @@ app.post('/api/comments/post/:postId', async (req, res) => {
     // Load existing comments and add new one
     const comments = loadComments();
     comments.push(newComment);
-    saveComments(comments);
+    await saveComments(comments);
     
     res.json({ 
       message: 'Comment added successfully',
@@ -529,14 +461,14 @@ app.delete('/api/posts/:postId', async (req, res) => {
     const { postId } = req.params;
     
     // Load existing posts and remove the one with matching ID
-    const posts = loadPosts();
+    const posts = await loadPosts();
     const updatedPosts = posts.filter(post => post.id != postId);
     savePosts(updatedPosts);
     
     // Also delete all comments for this post
-    const comments = loadComments();
+    const comments = await loadComments();
     const updatedComments = comments.filter(comment => comment.post_id != postId);
-    saveComments(updatedComments);
+    await saveComments(updatedComments);
     
     res.json({ 
       message: 'Post deleted successfully'
