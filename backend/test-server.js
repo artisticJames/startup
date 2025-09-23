@@ -284,7 +284,7 @@ app.put('/api/profile', async (req, res) => {
 // Admin endpoints
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = loadUsers();
+    const users = await loadUsers();
     const userList = Object.values(users).map(user => ({
       id: user.id,
       name: user.name,
