@@ -330,6 +330,7 @@
             content: content,
             user_id: currentUser.id || Date.now(),
             user_name: currentUser.name,
+            user_email: currentUser.email,
             created_at: new Date().toISOString(),
             attachments: files.map(f => ({
                 name: f.name,
@@ -497,7 +498,11 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                }
+                },
+                body: JSON.stringify({
+                    email: (getCurrentUser() || {}).email,
+                    isAdmin: (getCurrentUser() || {}).isAdmin || false
+                })
             });
 
             if (response.ok) {
