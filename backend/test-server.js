@@ -375,11 +375,18 @@ app.get('/api/posts', async (req, res) => {
     
     // Load comments and attach them to posts
     const comments = await loadComments();
+    console.log('Loaded comments:', comments.length);
+    console.log('Comments by post_id:', comments.reduce((acc, c) => {
+      acc[c.post_id] = (acc[c.post_id] || 0) + 1;
+      return acc;
+    }, {}));
+    
     const postsWithComments = posts.map(post => ({
       ...post,
       comments: comments.filter(comment => comment.post_id === post.id)
     }));
     
+    console.log('Posts with comments:', postsWithComments.map(p => ({ id: p.id, comments: p.comments.length })));
     res.json({ posts: postsWithComments });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
