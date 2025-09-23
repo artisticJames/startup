@@ -315,7 +315,7 @@ app.post('/api/admin/ban/:userEmail', async (req, res) => {
     const { userEmail } = req.params;
     const { banned } = req.body;
     
-    const users = loadUsers();
+    const users = await loadUsers();
     if (users[userEmail]) {
       users[userEmail].banned = banned;
       saveUsers(users);
@@ -404,7 +404,7 @@ app.post('/api/posts', async (req, res) => {
     
     // Check if user is banned
     if (user_email) {
-      const users = loadUsers();
+      const users = await loadUsers();
       const user = users[user_email];
       if (user && user.banned) {
         return res.status(403).json({ error: 'Your account has been banned. You cannot create posts.' });
@@ -458,7 +458,7 @@ app.post('/api/comments/post/:postId', async (req, res) => {
     
     // Check if user is banned
     if (user_email) {
-      const users = loadUsers();
+      const users = await loadUsers();
       const user = users[user_email];
       if (user && user.banned) {
         return res.status(403).json({ error: 'Your account has been banned. You cannot create comments.' });
@@ -477,7 +477,7 @@ app.post('/api/comments/post/:postId', async (req, res) => {
     };
     
     // Load existing comments and add new one
-    const comments = loadComments();
+    const comments = await loadComments();
     comments.push(newComment);
     await saveComments(comments);
     
@@ -553,7 +553,7 @@ app.post('/api/activate-demo', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    const users = loadUsers();
+    const users = await loadUsers();
     
     if (!users[email]) {
       return res.status(404).json({ error: 'User not found' });
@@ -584,7 +584,7 @@ app.post('/api/upgrade-premium', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    const users = loadUsers();
+    const users = await loadUsers();
     
     if (!users[email]) {
       return res.status(404).json({ error: 'User not found' });
