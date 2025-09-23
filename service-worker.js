@@ -31,11 +31,17 @@ self.addEventListener('fetch', (event) => {
     return; // Don't call respondWith for cross-origin
   }
 
+  // Bypass cache for API calls to avoid stale data
+  if (requestUrl.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       return fetch(request)
         .then((networkResponse) => {
-          // Cache successful same-origin responses
+          // Cache successful same-origin responses (non-API)
           if (networkResponse && networkResponse.ok) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
