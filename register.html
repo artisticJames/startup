@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Create Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body class="login-body">
+    <div class="frame">
+        <div class="device">
+            <div class="content login">
+                <header class="login-header">
+                    <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                    <h1>Create Account</h1>
+                    <p class="subtitle">Join the community.</p>
+                </header>
+
+                <!-- Step 1: Registration Form -->
+                <form class="login-form" id="registerForm" novalidate>
+                    <label class="input">
+                        <span>Name</span>
+                        <input type="text" id="rname" placeholder="Your name" required />
+                    </label>
+                    <label class="input">
+                        <span>Email</span>
+                        <input type="email" id="remail" placeholder="you@example.com" required />
+                    </label>
+                    <label class="input">
+                        <span>Password</span>
+                        <input type="password" id="rpassword" placeholder="Create a password" required />
+                    </label>
+                    <button type="submit" class="primary">Sign Up</button>
+                    <a class="muted-link" href="login.html">Already have an account? Sign in</a>
+                </form>
+
+                <!-- Step 2: Email Verification -->
+                <div class="login-form" id="verificationForm" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <span style="font-size: 24px;">📧</span>
+                        </div>
+                        <h2 style="margin: 0 0 8px 0; color: #1f2937;">Check your email</h2>
+                        <p style="color: #6b7280; margin: 0;">We sent a 6-digit verification code to</p>
+                        <p style="color: #1f7a4c; font-weight: 600; margin: 4px 0 0 0;" id="verificationEmail"></p>
+                    </div>
+                    
+                    <label class="input">
+                        <span>Verification Code</span>
+                        <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" required />
+                    </label>
+                    
+                    <button type="button" class="primary" id="verifyBtn">Verify Email</button>
+                    <button type="button" class="secondary" id="resendBtn" style="margin-top: 12px;">Resend Code</button>
+                    <a class="muted-link" href="login.html" style="margin-top: 16px; display: block;">Back to Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+    // Initialize EmailJS
+    emailjs.init('nZMEUxawWH66xxAPX');
+    
+    let registrationData = {};
+    let verificationCode = '';
+
+    // Generate 6-digit verification code
+    function generateVerificationCode() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Send verification email using EmailJS
+    async function sendVerificationEmail(email, code) {
+        try {
+            const templateParams = {
+                to_email: email,
+                email: email,  // Some templates use 'email' instead of 'to_email'
+                verification_code: code,
+                passcode: code,  // Default EmailJS template uses 'passcode'
+                code: code,  // Alternative variable name
+                app_name: 'Start Up',
+                company_name: 'Start Up'
+            };
+
+            console.log('Sending email with params:', templateParams);
+            console.log('Service ID:', 'service_9akdet4');
+            console.log('Template ID:', 'template_ge7p7mo');
+
+            // Send verification email
+            const response = await emailjs.send(
+                'service_9akdet4',     // Your service ID
+                'template_ge7p7mo',    // Your verification template ID
+                templateParams
+            );
+            
+            console.log('Email sent successfully:', response);
+            return true;
+        } catch (error) {
+            console.error('Email sending failed:', error);
+            console.error('Error details:', error.message);
+            console.error('Error status:', error.status);
+            return false;
+        }
+    }
+
+    // Registration form submission
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('rname').value;
+        const email = document.getElementById('remail').value;
+        const password = document.getElementById('rpassword').value;
+        
+        // Store registration data
+        registrationData = { name, email, password };
+        
+        try {
+            // Try to register user in database, but fallback to localStorage if server is down
+            try {
+                const registerResponse = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const registerResult = await registerResponse.json();
+
+                if (!registerResponse.ok) {
+                    throw new Error(registerResult.error || 'Registration failed');
+                }
+
+                console.log('User registered in database:', registerResult);
+            } catch (serverError) {
+                console.log('Server not available, using localStorage fallback:', serverError.message);
+                // Fallback to localStorage if server is down
+            }
+
+            // Generate verification code
+            verificationCode = generateVerificationCode();
+            
+            // Send verification email
+            const emailSent = await sendVerificationEmail(email, verificationCode);
+            
+            if (emailSent) {
+                // Show verification form
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('verificationForm').style.display = 'block';
+                document.getElementById('verificationEmail').textContent = email;
+                
+                // Focus on verification code input
+                document.getElementById('verificationCode').focus();
+            } else {
+                // Fallback: Show verification form anyway for testing
+                console.log('Email failed, but showing verification form for testing');
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('verificationForm').style.display = 'block';
+                document.getElementById('verificationEmail').textContent = email;
+                document.getElementById('verificationCode').focus();
+                
+                // Show the code in console for testing
+                console.log('Your verification code is:', verificationCode);
+                alert('Email service is having issues. Check console for verification code: ' + verificationCode);
+            }
+            
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('Registration failed. Please try again.');
+        }
+    });
+
+    // Verification code input formatting
+    document.getElementById('verificationCode').addEventListener('input', (e) => {
+        // Only allow numbers
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
+    // Verify email
+    document.getElementById('verifyBtn').addEventListener('click', async () => {
+        const code = document.getElementById('verificationCode').value;
+        
+        if (code.length !== 6) {
+            alert('Please enter a valid 6-digit code.');
+            return;
+        }
+        
+        try {
+            // Check if code matches
+            if (code === verificationCode) {
+                // Try to verify email in database, but fallback to localStorage
+                try {
+                    const verifyResponse = await fetch('/api/verify-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            email: registrationData.email, 
+                            verification_code: code 
+                        })
+                    });
+
+                    const verifyResult = await verifyResponse.json();
+
+                if (verifyResponse.ok) {
+                    // Save user data and token to localStorage
+                    const userData = {
+                        name: registrationData.name,
+                        email: registrationData.email,
+                        registeredAt: new Date().toISOString(),
+                        verified: true,
+                        id: verifyResult.user.id
+                    };
+                    console.log('Registration verification - Saving user data:', userData);
+                    console.log('Registration verification - Name from form:', registrationData.name);
+                    console.log('Registration verification - Email from form:', registrationData.email);
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    localStorage.setItem('authToken', verifyResult.token);
+                    
+                    // Verify data was saved
+                    const savedData = localStorage.getItem('userData');
+                    console.log('Registration verification - Saved user data:', savedData);
+                    const parsedData = JSON.parse(savedData);
+                    console.log('Registration verification - Parsed saved data - Name:', parsedData.name, 'Email:', parsedData.email);
+                    
+                    alert('Email verified successfully! Account created.');
+                    window.location.href = 'index.html';
+                } else {
+                    throw new Error(verifyResult.error || 'Verification failed');
+                }
+                } catch (serverError) {
+                    console.log('Server not available, using localStorage fallback:', serverError.message);
+                    // Fallback to localStorage
+                    const userData = {
+                        name: registrationData.name,
+                        email: registrationData.email,
+                        registeredAt: new Date().toISOString(),
+                        verified: true,
+                        id: Date.now() // Generate a simple ID
+                    };
+                    console.log('Registration fallback - Saving user data:', userData);
+                    console.log('Registration fallback - Name from form:', registrationData.name);
+                    console.log('Registration fallback - Email from form:', registrationData.email);
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    
+                    // Verify data was saved
+                    const savedData = localStorage.getItem('userData');
+                    console.log('Registration fallback - Saved user data:', savedData);
+                    const parsedData = JSON.parse(savedData);
+                    console.log('Registration fallback - Parsed saved data - Name:', parsedData.name, 'Email:', parsedData.email);
+                    
+                    alert('Email verified successfully! Account created.');
+                    window.location.href = 'index.html';
+                }
+            } else {
+                alert('Invalid verification code. Please try again.');
+            }
+        } catch (error) {
+            console.error('Verification error:', error);
+            alert('Verification failed. Please try again.');
+        }
+    });
+
+    // Resend verification code
+    document.getElementById('resendBtn').addEventListener('click', async () => {
+        try {
+            // Generate new code
+            verificationCode = generateVerificationCode();
+            
+            // Send new email
+            const emailSent = await sendVerificationEmail(registrationData.email, verificationCode);
+            
+            if (emailSent) {
+                alert('Verification code resent to your email.');
+            } else {
+                alert('Failed to resend code. Please try again.');
+            }
+        } catch (error) {
+            alert('Failed to resend code. Please try again.');
+        }
+    });
+    </script>
+</body>
+</html>
+

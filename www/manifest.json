@@ -1,0 +1,10 @@
+{
+  "name": "Start Up",
+  "short_name": "StartUp",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f6f5ef",
+  "theme_color": "#1f7a4c",
+  "icons": []
+}
+

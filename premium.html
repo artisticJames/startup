@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Go Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body class="login-body">
+    <div class="frame">
+        <div class="device">
+            <div class="content login">
+                <header class="login-header">
+                    <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                    <h1>Go Premium</h1>
+                    <p class="subtitle">Ad‑free experience</p>
+                </header>
+
+                <div class="login-form" style="text-align:center">
+                    <button id="goPremium" class="primary">Activate Premium (demo)</button>
+                    <a class="muted-link" href="index.html">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script>
+    document.getElementById('goPremium').addEventListener('click', async () => {
+        const button = document.getElementById('goPremium');
+        const originalText = button.textContent;
+        
+        try {
+            button.textContent = 'Activating...';
+            button.disabled = true;
+            
+            // Update localStorage first
+            Entitlements.setTier('premium');
+            
+            // Try to update backend if user is logged in
+            const userData = localStorage.getItem('userData');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    const response = await fetch('/api/upgrade-premium', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email: user.email })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Premium activated successfully! Ads will be hidden.');
+                    } else {
+                        alert('Premium activated locally. Some features may not sync until next login.');
+                    }
+                } catch (error) {
+                    console.log('Backend update failed, but premium activated locally');
+                    alert('Premium activated locally. Some features may not sync until next login.');
+                }
+            } else {
+                alert('Premium activated (demo). Ads will be hidden.');
+            }
+            
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error('Error activating premium:', error);
+            alert('Failed to activate premium. Please try again.');
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    });
+    </script>
+</body>
+</html>
+

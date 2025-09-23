@@ -1,0 +1,635 @@
+const express = require('express');
+const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config({ path: './config.env' });
+
+const app = express();
+const PORT = 3000;
+
+// Simple file-based storage for registered users
+const usersFile = path.join(__dirname, 'registered-users.json');
+
+// Load registered users from file
+function loadUsers() {
+  try {
+    if (fs.existsSync(usersFile)) {
+      const data = fs.readFileSync(usersFile, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.log('Error loading users:', error.message);
+  }
+  return {};
+}
+
+// Save users to file
+function saveUsers(users) {
+  try {
+    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.log('Error saving users:', error.message);
+  }
+}
+
+// Comments storage
+const commentsFile = path.join(__dirname, 'comments.json');
+
+// Load comments from file
+function loadComments() {
+  try {
+    if (fs.existsSync(commentsFile)) {
+      const data = fs.readFileSync(commentsFile, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.log('Error loading comments:', error.message);
+  }
+  return [];
+}
+
+// Save comments to file
+function saveComments(comments) {
+  try {
+    fs.writeFileSync(commentsFile, JSON.stringify(comments, null, 2));
+  } catch (error) {
+    console.log('Error saving comments:', error.message);
+  }
+}
+
+// Simple middleware
+app.use(express.json({ limit: '50mb' })); // Increase payload size limit
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // For form data
+// Serve static files from project root (../)
+app.use(express.static(path.join(__dirname, '..')));
+
+// Explicit manifest route with proper headers
+app.get('/manifest.json', (req, res) => {
+  const manifestPath = path.join(__dirname, '..', 'manifest.json');
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(manifestPath);
+});
+
+// Explicit service worker route with proper headers
+app.get(['/service-worker.js', '/sw.js'], (req, res) => {
+  const swPath = path.join(__dirname, '..', 'service-worker.js');
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(swPath);
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Start Up API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test database connection
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'startup_app'
+    });
+    
+    await connection.execute('SELECT 1 as test');
+    connection.end();
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Database connection successful',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Database connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Server-side quote proxy to avoid CORS/rate limits
+app.get('/api/quote', async (req, res) => {
+  try {
+    // Try ZenQuotes first
+    try {
+      const r1 = await fetch('https://zenquotes.io/api/today', { cache: 'no-store' });
+      if (r1.ok) {
+        const d1 = await r1.json();
+        if (Array.isArray(d1) && d1[0] && d1[0].q) {
+          return res.json({ text: d1[0].q, author: d1[0].a || '—', source: 'zenquotes' });
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: Quotable
+    try {
+      const r2 = await fetch('https://api.quotable.io/random?tags=inspirational', { cache: 'no-store' });
+      if (r2.ok) {
+        const d2 = await r2.json();
+        return res.json({ text: d2.content, author: d2.author || '—', source: 'quotable' });
+      }
+    } catch (_) {}
+
+    // Last resort
+    return res.json({
+      text: 'The only way to do great work is to love what you do.',
+      author: 'Steve Jobs',
+      source: 'fallback'
+    });
+  } catch (error) {
+    return res.json({
+      text: 'The only way to do great work is to love what you do.',
+      author: 'Steve Jobs',
+      source: 'fallback'
+    });
+  }
+});
+
+// Registration endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    const users = loadUsers();
+    
+    // Check if user already exists
+    if (users[email]) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+
+    // Create new user
+    const userId = Date.now();
+    users[email] = {
+      id: userId,
+      name: name,
+      email: email,
+      password: password, // In real app, this would be hashed
+      verified: false,
+      tier: 'none', // Default tier is 'none'
+      registeredAt: new Date().toISOString()
+    };
+
+    saveUsers(users);
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: userId,
+        name: name,
+        email: email,
+        verified: false
+      },
+      token: 'test-token-' + userId
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Email verification endpoint
+app.post('/api/verify-email', async (req, res) => {
+  try {
+    const { email, verification_code } = req.body;
+    
+    const users = loadUsers();
+    const user = users[email];
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // For testing, accept any verification code
+    user.verified = true;
+    saveUsers(users);
+
+    res.json({
+      message: 'Email verified successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: true
+      },
+      token: 'test-token-' + user.id
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const users = loadUsers();
+    const user = users[email];
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // For testing, accept any password
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
+        profile_picture: user.profile_picture || null,
+        isAdmin: user.email === 'admin@startup.com' // Check if admin
+      },
+      token: 'test-token-' + user.id
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update profile (name) endpoint
+app.put('/api/profile', async (req, res) => {
+  try {
+    const { email, name, profile_picture } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({ error: 'Email and name are required' });
+    }
+
+    const users = loadUsers();
+    const user = users[email];
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.name = name;
+    if (profile_picture) {
+      user.profile_picture = profile_picture;
+    }
+    saveUsers(users);
+
+    return res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
+        profile_picture: user.profile_picture || null,
+        isAdmin: user.email === 'admin@startup.com'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin endpoints
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = loadUsers();
+    const userList = Object.values(users).map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      verified: user.verified,
+      banned: user.banned || false,
+      tier: user.tier || 'none',
+      registeredAt: user.registeredAt
+    }));
+    
+    res.json({ users: userList });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Ban/Unban user endpoint
+app.post('/api/admin/ban/:userEmail', async (req, res) => {
+  try {
+    const { userEmail } = req.params;
+    const { banned } = req.body;
+    
+    const users = loadUsers();
+    if (users[userEmail]) {
+      users[userEmail].banned = banned;
+      saveUsers(users);
+      
+      res.json({ 
+        message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
+        user: {
+          email: userEmail,
+          banned: banned
+        }
+      });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Posts storage
+const postsFile = path.join(__dirname, 'posts.json');
+
+// Load posts from file
+function loadPosts() {
+  try {
+    if (fs.existsSync(postsFile)) {
+      const data = fs.readFileSync(postsFile, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.log('Error loading posts:', error.message);
+  }
+  return [];
+}
+
+// Save posts to file
+function savePosts(posts) {
+  try {
+    fs.writeFileSync(postsFile, JSON.stringify(posts, null, 2));
+  } catch (error) {
+    console.log('Error saving posts:', error.message);
+  }
+}
+
+// Get posts endpoint
+app.get('/api/posts', async (req, res) => {
+  try {
+    let posts = loadPosts();
+    
+    // If no posts exist, create some sample posts
+    if (posts.length === 0) {
+      posts = [
+        {
+          id: 1,
+          user_name: 'Kael',
+          user_email: 'kael@gmail.com',
+          content: 'Just launched my new startup! Excited to share the journey with everyone. Building something amazing in the fintech space.',
+          created_at: new Date().toISOString(),
+          attachments: []
+        },
+        {
+          id: 2,
+          user_name: 'James',
+          user_email: 'james@gmail.com',
+          content: 'Looking for co-founders for my tech startup. Anyone interested in joining an AI-powered platform?',
+          created_at: new Date().toISOString(),
+          attachments: []
+        },
+        {
+          id: 3,
+          user_name: 'luther',
+          user_email: 'jameslutherapaap14@gmail.com',
+          content: 'Sharing some insights from my recent pitch to investors. The key is preparation and knowing your numbers!',
+          created_at: new Date().toISOString(),
+          attachments: []
+        }
+      ];
+      savePosts(posts);
+    }
+    
+    // Load comments and attach them to posts
+    const comments = loadComments();
+    const postsWithComments = posts.map(post => ({
+      ...post,
+      comments: comments.filter(comment => comment.post_id === post.id)
+    }));
+    
+    res.json({ posts: postsWithComments });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new post endpoint
+app.post('/api/posts', async (req, res) => {
+  try {
+    const { content, attachments = [], user_name, user_email } = req.body;
+    
+    if (!content && (!attachments || attachments.length === 0)) {
+      return res.status(400).json({ error: 'Post content or attachments required' });
+    }
+    
+    // Check if user is banned
+    if (user_email) {
+      const users = loadUsers();
+      const user = users[user_email];
+      if (user && user.banned) {
+        return res.status(403).json({ error: 'Your account has been banned. You cannot create posts.' });
+      }
+    }
+    
+    // Create new post
+    const newPost = {
+      id: Date.now(),
+      user_name: user_name || 'Anonymous User',
+      user_email: user_email || 'anonymous@example.com',
+      content: content || '',
+      attachments: attachments,
+      created_at: new Date().toISOString(),
+      comments: []
+    };
+    
+    // Load existing posts and add new one
+    const posts = loadPosts();
+    posts.unshift(newPost); // Add to beginning
+    savePosts(posts);
+    
+    res.json({ 
+      message: 'Post created successfully',
+      post: newPost
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Comments endpoint for admin
+app.get('/api/comments', async (req, res) => {
+  try {
+    const comments = loadComments();
+    res.json({ comments: comments });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add comment to post
+app.post('/api/comments/post/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { content, attachments = [], user_name, user_email } = req.body;
+    
+    if (!content && (!attachments || attachments.length === 0)) {
+      return res.status(400).json({ error: 'Comment content or attachments required' });
+    }
+    
+    // Check if user is banned
+    if (user_email) {
+      const users = loadUsers();
+      const user = users[user_email];
+      if (user && user.banned) {
+        return res.status(403).json({ error: 'Your account has been banned. You cannot create comments.' });
+      }
+    }
+    
+    // Create new comment
+    const newComment = {
+      id: Date.now(),
+      post_id: parseInt(postId),
+      user_name: user_name || 'Anonymous User',
+      user_email: user_email || 'anonymous@example.com',
+      content: content || '',
+      attachments: attachments,
+      created_at: new Date().toISOString()
+    };
+    
+    // Load existing comments and add new one
+    const comments = loadComments();
+    comments.push(newComment);
+    saveComments(comments);
+    
+    res.json({ 
+      message: 'Comment added successfully',
+      comment: newComment
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete post endpoint
+app.delete('/api/posts/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    // Load existing posts and remove the one with matching ID
+    const posts = loadPosts();
+    const updatedPosts = posts.filter(post => post.id != postId);
+    savePosts(updatedPosts);
+    
+    // Also delete all comments for this post
+    const comments = loadComments();
+    const updatedComments = comments.filter(comment => comment.post_id != postId);
+    saveComments(updatedComments);
+    
+    res.json({ 
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete comment endpoint
+app.delete('/api/comments/:commentId', async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    
+    // Load existing comments and remove the one with matching ID
+    const comments = loadComments();
+    const updatedComments = comments.filter(comment => comment.id != commentId);
+    saveComments(updatedComments);
+    
+    res.json({ 
+      message: 'Comment deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Activate demo tier endpoint
+app.post('/api/activate-demo', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const users = loadUsers();
+    
+    if (!users[email]) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user tier to demo
+    users[email].tier = 'demo';
+    saveUsers(users);
+
+    res.json({
+      message: 'Demo tier activated successfully',
+      user: {
+        email: email,
+        tier: 'demo'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upgrade to premium tier endpoint
+app.post('/api/upgrade-premium', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const users = loadUsers();
+    
+    if (!users[email]) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user tier to premium
+    users[email].tier = 'premium';
+    saveUsers(users);
+
+    res.json({
+      message: 'Premium tier activated successfully',
+      user: {
+        email: email,
+        tier: 'premium'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Test Server running on http://localhost:${PORT}`);
+  console.log(`📱 Frontend available at http://localhost:${PORT}`);
+  console.log(`🔗 API endpoints at http://localhost:${PORT}/api`);
+  console.log(`🧪 Test database: http://localhost:${PORT}/api/test-db`);
+});

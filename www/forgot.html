@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Forgot Password</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body class="login-body">
+    <div class="frame">
+        <div class="device">
+            <div class="content login">
+                <header class="login-header">
+                    <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                    <h1>Forgot Password</h1>
+                    <p class="subtitle">Enter your email to receive a reset link.</p>
+                </header>
+
+                <!-- Step 1: Email Input -->
+                <form class="login-form" id="forgotForm" novalidate>
+                    <label class="input">
+                        <span>Email</span>
+                        <input type="email" id="femail" placeholder="you@example.com" required />
+                    </label>
+                    <button type="submit" class="primary">Send Reset Code</button>
+                    <a class="muted-link" href="login.html">Back to sign in</a>
+                </form>
+
+                <!-- Step 2: Verification Code -->
+                <div class="login-form" id="resetVerificationForm" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="width: 64px; height: 64px; background: #fef3c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <span style="font-size: 24px;">🔐</span>
+                        </div>
+                        <h2 style="margin: 0 0 8px 0; color: #1f2937;">Check your email</h2>
+                        <p style="color: #6b7280; margin: 0;">We sent a 6-digit reset code to</p>
+                        <p style="color: #1f7a4c; font-weight: 600; margin: 4px 0 0 0;" id="resetEmail"></p>
+                    </div>
+                    
+                    <label class="input">
+                        <span>Reset Code</span>
+                        <input type="text" id="resetCode" placeholder="Enter 6-digit code" maxlength="6" required />
+                    </label>
+                    
+                    <button type="button" class="primary" id="verifyResetBtn">Verify Code</button>
+                    <button type="button" class="secondary" id="resendResetBtn" style="margin-top: 12px;">Resend Code</button>
+                    <a class="muted-link" href="login.html" style="margin-top: 16px; display: block;">Back to Sign In</a>
+                </div>
+
+                <!-- Step 3: New Password -->
+                <div class="login-form" id="newPasswordForm" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <span style="font-size: 24px;">✅</span>
+                        </div>
+                        <h2 style="margin: 0 0 8px 0; color: #1f2937;">Create New Password</h2>
+                        <p style="color: #6b7280; margin: 0;">Enter your new password below</p>
+                    </div>
+                    
+                    <label class="input">
+                        <span>New Password</span>
+                        <input type="password" id="newPassword" placeholder="Enter new password" required />
+                    </label>
+                    
+                    <label class="input">
+                        <span>Confirm Password</span>
+                        <input type="password" id="confirmPassword" placeholder="Confirm new password" required />
+                    </label>
+                    
+                    <button type="button" class="primary" id="updatePasswordBtn">Update Password</button>
+                    <a class="muted-link" href="login.html" style="margin-top: 16px; display: block;">Back to Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+    // Initialize EmailJS
+    emailjs.init('nZMEUxawWH66xxAPX');
+    
+    let resetEmail = '';
+    let resetCode = '';
+
+    // Generate 6-digit reset code
+    function generateResetCode() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Send reset email using EmailJS
+    async function sendResetEmail(email, code) {
+        try {
+            const templateParams = {
+                to_email: email,
+                email: email,  // Some templates use 'email' instead of 'to_email'
+                reset_code: code,
+                passcode: code,  // Default EmailJS template uses 'passcode'
+                code: code,  // Alternative variable name
+                app_name: 'Start Up',
+                company_name: 'Start Up'
+            };
+
+            // Send reset email
+            const response = await emailjs.send(
+                'service_9akdet4',     // Your service ID
+                'template_khkit9l',    // Your password reset template ID
+                templateParams
+            );
+            
+            console.log('Reset email sent successfully:', response);
+            return true;
+        } catch (error) {
+            console.error('Reset email sending failed:', error);
+            return false;
+        }
+    }
+
+    // Forgot password form submission
+    document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        resetEmail = document.getElementById('femail').value;
+        
+        // Generate reset code
+        resetCode = generateResetCode();
+        
+        try {
+            // Send reset email
+            const emailSent = await sendResetEmail(resetEmail, resetCode);
+            
+            if (emailSent) {
+                // Show verification form
+                document.getElementById('forgotForm').style.display = 'none';
+                document.getElementById('resetVerificationForm').style.display = 'block';
+                document.getElementById('resetEmail').textContent = resetEmail;
+                
+                // Focus on reset code input
+                document.getElementById('resetCode').focus();
+            } else {
+                alert('Error sending reset code. Please try again.');
+            }
+            
+        } catch (error) {
+            alert('Error sending reset code. Please try again.');
+        }
+    });
+
+    // Reset code input formatting
+    document.getElementById('resetCode').addEventListener('input', (e) => {
+        // Only allow numbers
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
+    // Verify reset code
+    document.getElementById('verifyResetBtn').addEventListener('click', async () => {
+        const code = document.getElementById('resetCode').value;
+        
+        if (code.length !== 6) {
+            alert('Please enter a valid 6-digit code.');
+            return;
+        }
+        
+        try {
+            // Check if code matches
+            if (code === resetCode) {
+                // Show new password form
+                document.getElementById('resetVerificationForm').style.display = 'none';
+                document.getElementById('newPasswordForm').style.display = 'block';
+                document.getElementById('newPassword').focus();
+            } else {
+                alert('Invalid reset code. Please try again.');
+            }
+        } catch (error) {
+            alert('Verification failed. Please try again.');
+        }
+    });
+
+    // Resend reset code
+    document.getElementById('resendResetBtn').addEventListener('click', async () => {
+        try {
+            // Generate new code
+            resetCode = generateResetCode();
+            
+            // Send new email
+            const emailSent = await sendResetEmail(resetEmail, resetCode);
+            
+            if (emailSent) {
+                alert('Reset code resent to your email.');
+            } else {
+                alert('Failed to resend code. Please try again.');
+            }
+        } catch (error) {
+            alert('Failed to resend code. Please try again.');
+        }
+    });
+
+    // Update password
+    document.getElementById('updatePasswordBtn').addEventListener('click', async () => {
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (newPassword.length < 6) {
+            alert('Password must be at least 6 characters long.');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            alert('Passwords do not match.');
+            return;
+        }
+        
+        try {
+            // Simulate password update
+            console.log('Updating password for:', resetEmail);
+            
+            alert('Password updated successfully! You can now sign in with your new password.');
+            window.location.href = 'login.html';
+            
+        } catch (error) {
+            alert('Failed to update password. Please try again.');
+        }
+    });
+    </script>
+</body>
+</html>
+

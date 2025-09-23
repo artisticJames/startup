@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Start Up logo">
+  <!-- Transparent background so it blends with header -->
+  <!-- Leaves (brand green) -->
+  <path d="M44 70c-8-16 3-34 20-40-3 18-10 29-20 40z" fill="#2c9c60"/>
+  <path d="M62 66c-5-10 3-21 15-25-1 11-6 18-15 25z" fill="#1f7a4c"/>
+  <!-- Curved stem leading into arrow (near-black green) -->
+  <path d="M44 70c18 8 38 6 57-13" fill="none" stroke="#1a2a22" stroke-width="7" stroke-linecap="round"/>
+  <!-- Up-right arrow tip -->
+  <path d="M92 54c7-6 14-14 20-25" fill="none" stroke="#1a2a22" stroke-width="9" stroke-linecap="round"/>
+  <path d="M106 26l10 2-2 10" fill="none" stroke="#1a2a22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Gold star -->
+  <path d="M112 14l2.4 4.9 5.4 .9-3.9 3.9 1 5.4-4.9-2.6-4.9 2.6 1-5.4-3.9-3.9 5.4-.9z" fill="#F2B63D"/>
+</svg>
+

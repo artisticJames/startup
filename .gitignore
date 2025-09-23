@@ -1,0 +1,19 @@
+node_modules/
+.DS_Store
+npm-debug.log*
+.env
+config.env
+*.log
+.cache/
+dist/
+build/
+# local files
+backend/*.json
+backend/*.sqlite
+backend/*.db
+backend/*.db-journal
+# Capacitor/Cordova build outputs not needed on server
+android/
+ios/
+www/
+.vercel

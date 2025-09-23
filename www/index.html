@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body>
+    <div class="frame">
+        <div class="device">
+            <div class="content">
+                <header class="app-header">
+                    <div class="brand">
+                        <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                        <h1>Start Up</h1>
+                    </div>
+                    <div class="user-info" style="position:absolute;right:22px;top:22px;display:flex;align-items:center;gap:12px;">
+                        <span id="welcomeText" class="muted-link" style="color:#6d7e78;font-size:14px;">Welcome!</span>
+                        <a class="muted-link" href="login.html" style="text-decoration:none;color:#6d7e78">Log out</a>
+                    </div>
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.3-4.3m1.8-5.2a7 7 0 11-14 0 7 7 0 0114 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <input id="search" type="search" placeholder="Search" autocomplete="off" />
+                    </label>
+                </header>
+
+                <main class="cards">
+                    <div class="ad-slot" id="ad-home">
+                        <div>
+                            <strong>Start Up Pro</strong>
+                            <div><small>Ad‑free experience</small></div>
+                        </div>
+                        <a class="ad-cta" href="premium.html">Try Premium</a>
+                    </div>
+                    <a class="card" href="startup-guides.html">
+                        <span class="icon">💡</span>
+                        <span class="title">Startup Guides</span>
+                        <span class="chevron">›</span>
+                    </a>
+
+                    <a class="card" href="business-planning.html">
+                        <span class="icon">📋</span>
+                        <span class="title">Business Planning</span>
+                        <span class="chevron">›</span>
+                    </a>
+
+                    <a class="card" href="resources.html">
+                        <span class="icon">📚</span>
+                        <span class="title">Resources</span>
+                        <span class="chevron">›</span>
+                    </a>
+
+                    <section class="quote">
+                        <h2>Motivational Quote</h2>
+                        <blockquote>
+                            <span class="quote-mark">“”</span>
+                            <p id="quoteText">The only way to do great work is to love what you do.</p>
+                            <cite id="quoteAuthor">Steve Jobs</cite>
+                        </blockquote>
+                    </section>
+                </main>
+
+                <nav class="tabbar" aria-label="Bottom Navigation">
+                    <a class="tab active" href="index.html">
+                        <span class="tab-icon">🏠</span>
+                        <span class="tab-label">Home</span>
+                    </a>
+                    <a class="tab" href="guides.html">
+                        <span class="tab-icon">📄</span>
+                        <span class="tab-label">Guides</span>
+                    </a>
+                    <a class="tab" href="community.html">
+                        <span class="tab-icon">👥</span>
+                        <span class="tab-label">Community</span>
+                    </a>
+                    <a class="tab" href="profile.html">
+                        <span class="tab-icon">👤</span>
+                        <span class="tab-label">Profile</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script src="app.js"></script>
+    <script>
+    // Load and display user data
+    function loadUserData() {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const user = JSON.parse(userData);
+            console.log('User data loaded:', user);
+            
+            // Update welcome text
+            const welcomeText = document.getElementById('welcomeText');
+            if (welcomeText) {
+                welcomeText.textContent = `Welcome, ${user.name}!`;
+            }
+            
+            // Update logout link
+            const logOutLink = document.querySelector('a[href="login.html"]');
+            if (logOutLink) {
+                logOutLink.textContent = `Log out`;
+            }
+        } else {
+            console.log('No user data found');
+            const welcomeText = document.getElementById('welcomeText');
+            if (welcomeText) {
+                welcomeText.textContent = 'Welcome, Guest!';
+            }
+        }
+    }
+    
+    // Load user data and quote when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadUserData();
+        // Load daily motivational quote
+        await QuoteManager.fetchDailyQuote();
+    });
+    </script>
+    <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js', { scope: '/' });}</script>
+</body>
+</html>
+

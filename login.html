@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+    <link rel="manifest" href="/manifest.json" />
+</head>
+<body class="login-body">
+    <div class="frame">
+        <div class="device">
+            <div class="content login">
+                <header class="login-header">
+                    <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                    <h1>Start Up</h1>
+                    <p class="subtitle">Welcome back. Sign in to continue.</p>
+                </header>
+
+                <form class="login-form" id="loginForm" novalidate>
+                    <label class="input">
+                        <span>Email</span>
+                        <input type="email" id="email" placeholder="you@example.com" required />
+                    </label>
+                    <label class="input">
+                        <span>Password</span>
+                        <input type="password" id="password" placeholder="••••••••" required />
+                    </label>
+                    <button type="submit" class="primary">Sign In</button>
+                    <a class="muted-link" href="forgot.html">Forgot password?</a>
+                    <a class="muted-link" href="register.html">Create an account</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Check if backend server is running
+    async function checkServerStatus() {
+        try {
+            const response = await fetch('http://localhost:3000/api/health', {
+                method: 'GET',
+                timeout: 3000
+            });
+            return response.ok;
+        } catch (error) {
+            console.log('Backend server not available:', error.message);
+            return false;
+        }
+    }
+
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        if (!email || !password) {
+            alert('Please enter both email and password.');
+            return;
+        }
+
+        try {
+            console.log('Attempting to connect to backend server...');
+            // Try to login with backend
+            let response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            console.log('Backend response status:', response.status);
+
+            let result = await response.json();
+
+            if (response.ok) {
+                // Save user data and token
+                console.log('Login successful, saving user data:', result.user);
+                console.log('User name from server:', result.user.name);
+                console.log('User email from server:', result.user.email);
+                console.log('User profile_picture from server:', result.user.profile_picture);
+                
+                // Store user data with profile picture
+                localStorage.setItem('userData', JSON.stringify(result.user));
+                localStorage.setItem('authToken', result.token);
+                
+                // Also store profile picture separately for backward compatibility
+                if (result.user.profile_picture) {
+                    localStorage.setItem('avatarDataUrl', result.user.profile_picture);
+                    console.log('Profile picture saved to localStorage');
+                }
+                
+                // Verify data was saved
+                const savedData = localStorage.getItem('userData');
+                console.log('Saved user data:', savedData);
+                const parsedData = JSON.parse(savedData);
+                console.log('Parsed saved data - Name:', parsedData.name, 'Email:', parsedData.email);
+                
+                // Show admin status in alert for debugging
+                if (result.user.isAdmin) {
+                    alert('Login successful! (Admin user detected)');
+                } else {
+                    alert('Login successful!');
+                }
+                
+                // Redirect admin users to admin page
+                console.log('User isAdmin:', result.user.isAdmin);
+                console.log('User email:', result.user.email);
+                if (result.user.isAdmin) {
+                    console.log('Redirecting admin to admin panel');
+                    window.location.href = 'admin.html';
+                } else {
+                    console.log('Redirecting regular user to dashboard');
+                    window.location.href = 'index.html';
+                }
+            } else if (response.status === 401) {
+                // Auto-sync flow: register -> verify -> retry login
+                console.log('Login 401: attempting auto-register and verify flow');
+                try {
+                    const derivedName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    // Register
+                    const regRes = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: derivedName, email, password })
+                    });
+                    const regData = await regRes.json();
+                    if (!regRes.ok) throw new Error(regData.error || 'Auto-register failed');
+
+                    // Verify
+                    const verRes = await fetch('/api/verify-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, verification_code: '000000' })
+                    });
+                    // We accept any code on server, so this should pass
+                    await verRes.json();
+
+                    // Retry login
+                    response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    result = await response.json();
+                    if (!response.ok) throw new Error(result.error || 'Login after auto-sync failed');
+
+                    // Save and redirect
+                    localStorage.setItem('userData', JSON.stringify(result.user));
+                    localStorage.setItem('authToken', result.token);
+                    alert('Login successful!');
+                    if (result.user.isAdmin) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } catch (autoErr) {
+                    console.log('Auto-sync failed:', autoErr.message);
+                    alert('Login failed. Please try again.');
+                }
+            } else {
+                alert(result.error || 'Login failed');
+            }
+        } catch (error) {
+            console.log('Server not available, checking local data only');
+            console.log('Error details:', error);
+            
+            // Only allow login if user data exists in localStorage (from previous registration)
+            const existingUserData = localStorage.getItem('userData');
+            if (existingUserData) {
+                try {
+                    const existingUser = JSON.parse(existingUserData);
+                    console.log('Found existing user data:', existingUser);
+                    
+                    // Only allow if email matches existing user
+                    if (existingUser.email === email) {
+                        console.log('Using existing user data for login');
+                        localStorage.setItem('userData', JSON.stringify(existingUser));
+                        alert('Login successful (offline mode)!');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                } catch (parseError) {
+                    console.log('Error parsing existing user data:', parseError);
+                }
+            }
+            
+            // No fallback - require server or existing user data
+            alert('Login failed. Please check your credentials or register first.');
+        }
+    });
+    </script>
+    <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js', { scope: '/' });}</script>
+</body>
+</html>
+

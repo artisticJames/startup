@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: startup-app
+    env: node
+    rootDir: .
+    buildCommand: npm install
+    startCommand: node backend/test-server.js
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+    healthCheckPath: /api/health
+

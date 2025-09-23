@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Community</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body>
+    <div class="frame">
+        <div class="device">
+            <div class="content">
+                <header class="app-header">
+                    <div class="brand">
+                        <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                        <h1>Community</h1>
+                    </div>
+                    <div class="user-info" style="position:absolute;right:22px;top:22px;">
+                        <span id="communityWelcomeText" class="muted-link" style="color:#6d7e78;font-size:14px;">Welcome!</span>
+                    </div>
+                </header>
+
+                <main class="community">
+                    <div class="ad-slot" id="ad-community">
+                        <div>
+                            <strong>Start Up Pro</strong>
+                            <div><small>Remove ads</small></div>
+                        </div>
+                        <a class="ad-cta" href="premium.html">Try Premium</a>
+                    </div>
+                    <form class="composer" id="composer">
+                        <img class="avatar" id="userAvatar" src="assets/logo.svg" alt="avatar" />
+                        <div class="composer-content">
+                            <input type="text" id="postText" placeholder="Share progress, ask a question..." required />
+                            <div class="attached-files" id="attachedFiles"></div>
+                        </div>
+                        <div class="composer-actions">
+                            <button type="button" class="file-upload-btn" id="fileUploadBtn" title="Attach files">
+                                <span class="upload-icon">📎</span>
+                            </button>
+                            <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.txt" style="display: none;" />
+                            <button type="submit">Post</button>
+                        </div>
+                    </form>
+
+                    <section id="feed" class="feed">
+                        <!-- Posts will be loaded here -->
+                    </section>
+                </main>
+
+                <nav class="tabbar" aria-label="Bottom Navigation">
+                    <a class="tab" href="index.html">
+                        <span class="tab-icon">🏠</span>
+                        <span class="tab-label">Home</span>
+                    </a>
+                    <a class="tab" href="guides.html">
+                        <span class="tab-icon">📄</span>
+                        <span class="tab-label">Guides</span>
+                    </a>
+                    <a class="tab active" href="community.html">
+                        <span class="tab-icon">👥</span>
+                        <span class="tab-label">Community</span>
+                    </a>
+                    <a class="tab" href="profile.html">
+                        <span class="tab-icon">👤</span>
+                        <span class="tab-label">Profile</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script src="notification-service.js"></script>
+    <script>
+    // Get current user data
+    function getCurrentUser() {
+        const userData = localStorage.getItem('userData');
+        console.log('Community page - Raw userData from localStorage:', userData);
+        
+        if (userData) {
+            const user = JSON.parse(userData);
+            console.log('Community page - Parsed user data:', user);
+            return user;
+        }
+        
+        console.log('Community page - No user data found');
+        return null;
+    }
+
+    // Get authentication headers
+    function getAuthHeaders() {
+        const token = localStorage.getItem('authToken');
+        return {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        };
+    }
+
+    // Get user avatar
+    function getUserAvatar() {
+        const saved = localStorage.getItem('avatarDataUrl');
+        return saved || 'assets/logo.svg';
+    }
+
+    // Format time ago
+    function timeAgo(dateString) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
+
+    // Create avatar initials
+    function getAvatarInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    // Load posts from database or localStorage
+    async function loadPosts() {
+        const feed = document.getElementById('feed');
+        
+        try {
+            // Try to load from database
+            const response = await fetch('http://localhost:3000/api/posts');
+            if (response.ok) {
+                const data = await response.json();
+                renderPosts(data.posts);
+                return;
+            }
+        } catch (error) {
+            console.log('Server not available, loading from localStorage');
+        }
+        
+        // Fallback to localStorage
+        const posts = JSON.parse(localStorage.getItem('communityPosts') || '[]');
+        renderPosts(posts);
+    }
+
+    // Render posts
+    function renderPosts(posts) {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = '';
+        
+        if (posts.length === 0) {
+            feed.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">No posts yet. Be the first to share something!</p>';
+            return;
+        }
+        
+        posts.forEach(post => {
+            const article = createPostElement(post);
+            feed.appendChild(article);
+        });
+    }
+
+    // Create post element
+    function createPostElement(post) {
+        const article = document.createElement('article');
+        article.className = 'post';
+        article.dataset.postId = post.id;
+        
+        const userInitials = getAvatarInitials(post.user_name || 'User');
+        const timeAgoText = timeAgo(post.created_at);
+        
+        // Generate attachments HTML
+        let attachmentsHtml = '';
+        if (post.attachments && post.attachments.length > 0) {
+            attachmentsHtml = '<div class="post-attachments">';
+            post.attachments.forEach(attachment => {
+                if (attachment.type.startsWith('image/')) {
+                    attachmentsHtml += `
+                        <img src="${attachment.dataUrl}" alt="${attachment.name}" class="post-image" onclick="openImageModal('${attachment.dataUrl}', '${attachment.name}')" />
+                    `;
+                } else {
+                    attachmentsHtml += `
+                        <a href="${attachment.dataUrl}" download="${attachment.name}" class="post-attachment">
+                            <div class="file-icon ${getFileTypeClass({type: attachment.type, name: attachment.name})}">${getFileIcon({type: attachment.type, name: attachment.name})}</div>
+                            <div class="file-info">
+                                <div class="file-name">${attachment.name}</div>
+                                <div class="file-size">${formatFileSize(attachment.size)}</div>
+                            </div>
+                            <div>⬇️</div>
+                        </a>
+                    `;
+                }
+            });
+            attachmentsHtml += '</div>';
+        }
+        
+        article.innerHTML = `
+            <div class="post-header">
+                <div class="avatar" style="background: #1f7a4c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">${userInitials}</div>
+                <div style="flex: 1;">
+                    <h3>${post.user_name || 'User'}</h3>
+                    <time>${timeAgoText}</time>
+                </div>
+                ${canDeletePost(post) ? `<button class="delete-btn" onclick="deletePost(${post.id})" title="Delete post" style="background: #ef4444; color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 12px;">🗑️ Delete</button>` : ''}
+            </div>
+            ${post.content ? `<p>${post.content.replace(/</g,'&lt;')}</p>` : ''}
+            ${attachmentsHtml}
+            <div class="comments" data-post-id="${post.id}">
+                ${post.comments ? post.comments.map(comment => {
+                    let commentHtml = `
+                        <div class="comment" data-comment-id="${comment.id}" style="display: flex; align-items: center; gap: 8px;">
+                            <span class="bubble" style="flex: 1;">
+                                <strong>${comment.user_name || 'User'}:</strong> ${comment.content ? comment.content.replace(/</g,'&lt;') : ''}
+                            </span>
+                            ${canDeleteComment(comment) ? `<button class="delete-comment-btn" onclick="deleteComment(${comment.id}, ${post.id})" title="Delete comment" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 10px;">🗑️</button>` : ''}
+                        </div>
+                    `;
+                    
+                    // Add comment attachments if they exist
+                    if (comment.attachments && comment.attachments.length > 0) {
+                        commentHtml += '<div class="comment-attachments">';
+                        comment.attachments.forEach(attachment => {
+                            if (attachment.type.startsWith('image/')) {
+                                commentHtml += `
+                                    <img src="${attachment.dataUrl}" alt="${attachment.name}" class="post-image" onclick="openImageModal('${attachment.dataUrl}', '${attachment.name}')" style="max-height:150px;" />
+                                `;
+                            } else {
+                                commentHtml += `
+                                    <a href="${attachment.dataUrl}" download="${attachment.name}" class="post-attachment" style="font-size:12px; padding:4px 8px;">
+                                        <div class="file-icon ${getFileTypeClass({type: attachment.type, name: attachment.name})}">${getFileIcon({type: attachment.type, name: attachment.name})}</div>
+                                        <div class="file-info">
+                                            <div class="file-name">${attachment.name}</div>
+                                            <div class="file-size">${formatFileSize(attachment.size)}</div>
+                                        </div>
+                                        <div>⬇️</div>
+                                    </a>
+                                `;
+                            }
+                        });
+                        commentHtml += '</div>';
+                    }
+                    
+                    return commentHtml;
+                }).join('') : ''}
+                <form class="comment-form" data-post-id="${post.id}">
+                    <input type="text" placeholder="Write a comment…" required />
+                    <div class="comment-attached-files" id="comment-files-${post.id}"></div>
+                    <div class="comment-actions">
+                        <button type="button" class="file-upload-btn comment-file-btn" data-post-id="${post.id}" title="Attach file">
+                            <span class="upload-icon">📎</span>
+                        </button>
+                        <button type="submit">Send</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        return article;
+    }
+
+    // Save post to database or localStorage
+    async function savePost(content, files = []) {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            alert('Please log in to post');
+            return null;
+        }
+
+        const postData = {
+            content: content,
+            user_id: currentUser.id || Date.now(),
+            user_name: currentUser.name,
+            user_email: currentUser.email,
+            created_at: new Date().toISOString(),
+            comments: [],
+            attachments: files.map(f => ({
+                name: f.name,
+                size: f.size,
+                type: f.type,
+                dataUrl: f.dataUrl
+            }))
+        };
+
+        try {
+            // Try to save to database
+            const response = await fetch('http://localhost:3000/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify({ 
+                    content, 
+                    attachments: postData.attachments,
+                    user_name: currentUser.name,
+                    user_email: currentUser.email
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                // Update the post with current user info
+                result.post.user_name = currentUser.name;
+                result.post.user_email = currentUser.email;
+                return result.post;
+            }
+        } catch (error) {
+            console.log('Server not available, saving to localStorage');
+        }
+
+        // Fallback to localStorage
+        const posts = JSON.parse(localStorage.getItem('communityPosts') || '[]');
+        postData.id = Date.now();
+        posts.unshift(postData);
+        localStorage.setItem('communityPosts', JSON.stringify(posts));
+        
+        return postData;
+    }
+
+    // Save comment to database or localStorage
+    async function saveComment(postId, content, files = []) {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            alert('Please log in to comment');
+            return null;
+        }
+
+        const commentData = {
+            content: content,
+            user_id: currentUser.id || Date.now(),
+            user_name: currentUser.name,
+            created_at: new Date().toISOString(),
+            attachments: files.map(f => ({
+                name: f.name,
+                size: f.size,
+                type: f.type,
+                dataUrl: f.dataUrl
+            }))
+        };
+
+        try {
+            // Try to save to database
+            const response = await fetch(`http://localhost:3000/api/comments/post/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify({ 
+                    content, 
+                    attachments: commentData.attachments,
+                    user_name: currentUser.name,
+                    user_email: currentUser.email
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                // Update the comment with current user info
+                result.comment.user_name = currentUser.name;
+                result.comment.user_email = currentUser.email;
+                return result.comment;
+            }
+        } catch (error) {
+            console.log('Server not available, saving to localStorage');
+        }
+
+        // Fallback to localStorage
+        const posts = JSON.parse(localStorage.getItem('communityPosts') || '[]');
+        const post = posts.find(p => p.id == postId);
+        if (post) {
+            if (!post.comments) post.comments = [];
+            commentData.id = Date.now();
+            post.comments.push(commentData);
+            localStorage.setItem('communityPosts', JSON.stringify(posts));
+        }
+        
+        return commentData;
+    }
+
+    // Add comment to UI immediately
+    function addCommentToUI(postId, comment) {
+        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+        if (!postElement) return;
+        
+        const commentsContainer = postElement.querySelector('.comments');
+        if (!commentsContainer) return;
+        
+        // Create comment HTML
+        let commentHtml = `
+            <div class="comment" data-comment-id="${comment.id}" style="display: flex; align-items: center; gap: 8px;">
+                <span class="bubble" style="flex: 1;">
+                    <strong>${comment.user_name || 'User'}:</strong> ${comment.content ? comment.content.replace(/</g,'&lt;') : ''}
+                </span>
+                ${canDeleteComment(comment) ? `<button class="delete-comment-btn" onclick="deleteComment(${comment.id}, ${postId})" title="Delete comment" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 10px;">🗑️</button>` : ''}
+            </div>
+        `;
+        
+        // Add comment attachments if they exist
+        if (comment.attachments && comment.attachments.length > 0) {
+            commentHtml += '<div class="comment-attachments">';
+            comment.attachments.forEach(attachment => {
+                if (attachment.type.startsWith('image/')) {
+                    commentHtml += `
+                        <img src="${attachment.dataUrl}" alt="${attachment.name}" class="post-image" onclick="openImageModal('${attachment.dataUrl}', '${attachment.name}')" style="max-height:150px;" />
+                    `;
+                } else {
+                    commentHtml += `
+                        <a href="${attachment.dataUrl}" download="${attachment.name}" class="post-attachment" style="font-size:12px; padding:4px 8px;">
+                            <div class="file-icon ${getFileTypeClass({type: attachment.type, name: attachment.name})}">${getFileIcon({type: attachment.type, name: attachment.name})}</div>
+                            <div class="file-info">
+                                <div class="file-name">${attachment.name}</div>
+                                <div class="file-size">${formatFileSize(attachment.size)}</div>
+                            </div>
+                            <div>⬇️</div>
+                        </a>
+                    `;
+                }
+            });
+            commentHtml += '</div>';
+        }
+        
+        // Insert the comment before the comment form
+        const commentForm = commentsContainer.querySelector('.comment-form');
+        if (commentForm) {
+            commentForm.insertAdjacentHTML('beforebegin', commentHtml);
+        } else {
+            commentsContainer.insertAdjacentHTML('beforeend', commentHtml);
+        }
+    }
+
+    // Check if current user can delete a post
+    function canDeletePost(post) {
+        const currentUser = getCurrentUser();
+        return currentUser && (currentUser.email === post.user_email || currentUser.isAdmin);
+    }
+
+    // Check if current user can delete a comment
+    function canDeleteComment(comment) {
+        const currentUser = getCurrentUser();
+        return currentUser && (currentUser.email === comment.user_email || currentUser.isAdmin);
+    }
+
+    // Delete post function
+    async function deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            // Try to delete from server
+            const response = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+
+            if (response.ok) {
+                // Remove from UI
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.remove();
+                }
+                alert('Post deleted successfully!');
+            } else {
+                throw new Error('Server deletion failed');
+            }
+        } catch (error) {
+            console.log('Server not available, deleting from localStorage');
+            // Fallback to localStorage
+            const posts = JSON.parse(localStorage.getItem('communityPosts') || '[]');
+            const updatedPosts = posts.filter(p => p.id != postId);
+            localStorage.setItem('communityPosts', JSON.stringify(updatedPosts));
+            
+            // Remove from UI
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.remove();
+            }
+            alert('Post deleted successfully!');
+        }
+    }
+
+    // Delete comment function
+    async function deleteComment(commentId, postId) {
+        if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            // Try to delete from server
+            const response = await fetch(`http://localhost:3000/api/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+
+            if (response.ok) {
+                // Remove from UI
+                const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+                alert('Comment deleted successfully!');
+            } else {
+                throw new Error('Server deletion failed');
+            }
+        } catch (error) {
+            console.log('Server not available, deleting from localStorage');
+            // Fallback to localStorage
+            const posts = JSON.parse(localStorage.getItem('communityPosts') || '[]');
+            const post = posts.find(p => p.id == postId);
+            if (post && post.comments) {
+                post.comments = post.comments.filter(c => c.id != commentId);
+                localStorage.setItem('communityPosts', JSON.stringify(posts));
+            }
+            
+            // Remove from UI
+            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+                commentElement.remove();
+            }
+            alert('Comment deleted successfully!');
+        }
+    }
+
+    // File handling variables
+    let attachedFiles = [];
+    let commentFiles = {}; // Store files for each comment form by post ID
+
+    // File utility functions
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(file) {
+        if (file.type.startsWith('image/')) return '🖼️';
+        if (file.type === 'application/pdf') return '📄';
+        if (file.type.includes('document') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) return '📝';
+        return '📎';
+    }
+
+    function getFileTypeClass(file) {
+        if (file.type.startsWith('image/')) return 'image';
+        if (file.type === 'application/pdf') return 'pdf';
+        if (file.type.includes('document') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) return 'doc';
+        return 'other';
+    }
+
+    function validateFile(file) {
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+        
+        if (file.size > maxSize) {
+            alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+            return false;
+        }
+        
+        if (!allowedTypes.includes(file.type)) {
+            alert(`File type "${file.type}" is not supported. Please upload images, PDFs, or documents.`);
+            return false;
+        }
+        
+        return true;
+    }
+
+    function addFileToAttachments(file, isComment = false, postId = null) {
+        if (!validateFile(file)) return;
+        
+        const fileId = Date.now() + Math.random();
+        const fileData = {
+            id: fileId,
+            file: file,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            dataUrl: null
+        };
+
+        // Convert to data URL for storage
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            fileData.dataUrl = e.target.result;
+            
+            if (isComment && postId) {
+                // Add to comment files
+                if (!commentFiles[postId]) {
+                    commentFiles[postId] = [];
+                }
+                commentFiles[postId].push(fileData);
+                renderCommentAttachedFiles(postId);
+            } else {
+                // Add to post files
+                attachedFiles.push(fileData);
+                renderAttachedFiles();
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderAttachedFiles() {
+        const container = document.getElementById('attachedFiles');
+        container.innerHTML = '';
+
+        attachedFiles.forEach(fileData => {
+            const fileElement = document.createElement('div');
+            fileElement.className = 'attached-file';
+            fileElement.innerHTML = `
+                <div class="file-icon ${getFileTypeClass(fileData.file)}">${getFileIcon(fileData.file)}</div>
+                <div class="file-info">
+                    <div class="file-name">${fileData.name}</div>
+                    <div class="file-size">${formatFileSize(fileData.size)}</div>
+                </div>
+                <button class="remove-file" onclick="removeFile('${fileData.id}')">×</button>
+            `;
+            container.appendChild(fileElement);
+        });
+    }
+
+    function removeFile(fileId) {
+        attachedFiles = attachedFiles.filter(f => f.id != fileId);
+        renderAttachedFiles();
+    }
+
+    function renderCommentAttachedFiles(postId) {
+        const container = document.getElementById(`comment-files-${postId}`);
+        if (!container) return;
+        
+        container.innerHTML = '';
+        const files = commentFiles[postId] || [];
+        
+        files.forEach(fileData => {
+            const fileElement = document.createElement('div');
+            fileElement.className = 'comment-attached-file';
+            fileElement.innerHTML = `
+                <div class="file-icon ${getFileTypeClass(fileData.file)}">${getFileIcon(fileData.file)}</div>
+                <div class="file-info">
+                    <div class="file-name">${fileData.name}</div>
+                    <div class="file-size">${formatFileSize(fileData.size)}</div>
+                </div>
+                <button class="remove-file" onclick="removeCommentFile('${postId}', '${fileData.id}')">×</button>
+            `;
+            container.appendChild(fileElement);
+        });
+    }
+
+    function removeCommentFile(postId, fileId) {
+        if (commentFiles[postId]) {
+            commentFiles[postId] = commentFiles[postId].filter(f => f.id != fileId);
+            renderCommentAttachedFiles(postId);
+        }
+    }
+
+    // Image modal functionality
+    function openImageModal(imageSrc, imageName) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+        `;
+        
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.alt = imageName;
+        img.style.cssText = `
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        `;
+        
+        modal.appendChild(img);
+        document.body.appendChild(modal);
+        
+        modal.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+    }
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load user avatar
+        const userAvatar = document.getElementById('userAvatar');
+        userAvatar.src = getUserAvatar();
+        
+        // Load user data and update welcome text
+        const currentUser = getCurrentUser();
+        const welcomeText = document.getElementById('communityWelcomeText');
+        if (welcomeText) {
+            if (currentUser) {
+                welcomeText.textContent = `Welcome, ${currentUser.name}!`;
+            } else {
+                welcomeText.textContent = 'Welcome, Guest!';
+            }
+        }
+        
+        // Load posts
+        loadPosts();
+
+        // File upload setup
+        const fileUploadBtn = document.getElementById('fileUploadBtn');
+        const fileInput = document.getElementById('fileInput');
+
+        // Click to browse files
+        fileUploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(addFileToAttachments);
+            fileInput.value = ''; // Reset input
+        });
+
+        // Handle comment file upload buttons (event delegation)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.comment-file-btn')) {
+                e.preventDefault();
+                const postId = e.target.closest('.comment-file-btn').dataset.postId;
+                // Create a temporary file input for this comment
+                const tempInput = document.createElement('input');
+                tempInput.type = 'file';
+                tempInput.multiple = true;
+                tempInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
+                tempInput.style.display = 'none';
+                
+                tempInput.addEventListener('change', (e) => {
+                    Array.from(e.target.files).forEach(file => {
+                        addFileToAttachments(file, true, postId);
+                    });
+                });
+                
+                document.body.appendChild(tempInput);
+                tempInput.click();
+                document.body.removeChild(tempInput);
+            }
+        });
+    });
+
+    // Handle post submission
+    const composer = document.getElementById('composer');
+    composer.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = document.getElementById('postText').value.trim();
+        
+        if (!text && attachedFiles.length === 0) {
+            alert('Please enter some text or attach a file');
+            return;
+        }
+
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            alert('Please log in to post');
+            return;
+        }
+
+        const post = await savePost(text, attachedFiles);
+        if (post) {
+            loadPosts(); // Reload posts
+            composer.reset();
+            attachedFiles = [];
+            renderAttachedFiles();
+            
+            // Show notification for new post (if not from current user)
+            const currentUser = getCurrentUser();
+            if (currentUser && post.user_name !== currentUser.name) {
+                window.notificationService.showPostNotification(post.user_name, text);
+            }
+        }
+    });
+    
+    // Handle comment submissions (event delegation)
+    document.addEventListener('submit', async (e) => {
+        const form = e.target;
+        if (!form.classList.contains('comment-form')) return;
+        e.preventDefault();
+        
+        const input = form.querySelector('input');
+        const text = input.value.trim();
+        const postId = form.dataset.postId;
+        
+        if (!text && (!commentFiles[postId] || commentFiles[postId].length === 0)) {
+            alert('Please enter some text or attach a file');
+            return;
+        }
+        
+        const comment = await saveComment(postId, text, commentFiles[postId] || []);
+        
+        if (comment) {
+            // Clear the input
+            input.value = '';
+            
+            // Clear comment files for this post
+            commentFiles[postId] = [];
+            renderCommentAttachedFiles(postId);
+            
+            // Add comment to UI immediately
+            addCommentToUI(postId, comment);
+            
+            // Show notification for new comment (if not from current user and it's a reply to current user's post)
+            const currentUser = getCurrentUser();
+            if (currentUser && comment.user_name !== currentUser.name) {
+                // Check if this is a reply to current user's post
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    const postAuthor = postElement.querySelector('.post-author')?.textContent;
+                    if (postAuthor === currentUser.name) {
+                        window.notificationService.showCommentNotification(comment.user_name, text);
+                    }
+                }
+            }
+        }
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,19 @@
+{
+  "name": "Start Up",
+  "short_name": "StartUp",
+  "description": "A comprehensive startup platform with guides, community, and business planning tools",
+  "start_url": "/login.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f5ef",
+  "theme_color": "#1f7a4c",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/backend/android/android-launchericon-192-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/backend/android/android-launchericon-512-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "productivity", "education"],
+  "lang": "en",
+  "dir": "ltr"
+}
+

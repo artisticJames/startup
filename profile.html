@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body>
+    <div class="frame">
+        <div class="device">
+            <div class="content">
+                <header class="app-header">
+                    <div class="brand">
+                        <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                        <h1>Profile</h1>
+                    </div>
+                </header>
+
+                <main class="profile">
+                    <section class="profile-card">
+                        <div class="avatar-wrap">
+                            <img id="avatarImg" class="avatar-img" src="assets/logo.svg" alt="Avatar" />
+                            <button id="avatarBtn" class="avatar-edit" title="Change photo">✎</button>
+                            <input id="avatarInput" type="file" accept="image/*" style="display:none" />
+                        </div>
+                        <div class="info">
+                            <div class="name-row">
+                                <a href="login.html" class="signout" title="Sign out">⎋</a>
+                                <h2 id="userName">Loading...</h2>
+                            </div>
+                            <p id="userEmail">Loading...</p>
+                        </div>
+                    </section>
+
+                    <section class="demo-section" style="margin: 20px 0; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <h3 style="color: #1e7b4c; margin: 0 0 12px; font-size: 18px; font-weight: 600;">Premium Status</h3>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div>
+                                <span id="currentTierStatus" style="display: inline-block; background: #f3f4f6; color: #6b7280; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">Non</span>
+                            </div>
+                            <button id="activateDemoBtn" style="background: #0ea5e9; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; display: none;">Activate Demo</button>
+                        </div>
+                        <p style="color: #64748b; font-size: 14px; margin: 0; line-height: 1.5;">
+                            Try our premium features with a free demo. Get ad-free experience and access to exclusive content.
+                        </p>
+                    </section>
+
+                    <section class="settings">
+                        <button class="setting" data-modal="accountModal"><span>Account</span><span>›</span></button>
+                        <button class="setting" data-modal="notifModal"><span>Notifications</span><span>›</span></button>
+                        <button class="setting" data-modal="privacyModal"><span>Privacy</span><span>›</span></button>
+                        <button class="setting" data-modal="helpModal"><span>Help & Support</span><span>›</span></button>
+                        <button class="setting" data-modal="aboutModal"><span>About</span><span>›</span></button>
+                    </section>
+                </main>
+
+                <nav class="tabbar" aria-label="Bottom Navigation">
+                    <a class="tab" href="index.html">
+                        <span class="tab-icon">🏠</span>
+                        <span class="tab-label">Home</span>
+                    </a>
+                    <a class="tab" href="guides.html">
+                        <span class="tab-icon">📄</span>
+                        <span class="tab-label">Guides</span>
+                    </a>
+                    <a class="tab" href="community.html">
+                        <span class="tab-icon">👥</span>
+                        <span class="tab-label">Community</span>
+                    </a>
+                    <a class="tab active" href="profile.html">
+                        <span class="tab-icon">👤</span>
+                        <span class="tab-label">Profile</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="accountModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+        <div class="overlay"></div>
+        <div class="sheet">
+            <div class="sheet-head">
+                <h3 id="accountTitle">Account</h3>
+                <button class="close" data-close>✕</button>
+            </div>
+            <form class="form-grid">
+                <label>Name<input type="text" id="nameField" /></label>
+                <label>Email<span class="readonly-field" id="emailDisplay">Loading...</span></label>
+                <button class="primary" type="button" id="saveAccount">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notifModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="notifTitle">
+        <div class="overlay"></div>
+        <div class="sheet">
+            <div class="sheet-head">
+                <h3 id="notifTitle">Notifications</h3>
+                <button class="close" data-close>✕</button>
+            </div>
+            <div class="form-grid">
+                <label class="switch"><input type="checkbox" id="replyNotif" checked /> Community reply notifications</label>
+                <label class="switch"><input type="checkbox" id="postNotif" checked /> New post notifications</label>
+                <p class="notification-info">Get notified when someone replies to your posts or comments in the community.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="privacyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+        <div class="overlay"></div>
+        <div class="sheet">
+            <div class="sheet-head">
+                <h3 id="privacyTitle">Privacy</h3>
+                <button class="close" data-close>✕</button>
+            </div>
+            <div class="form-grid">
+                <label class="switch"><input type="checkbox" id="publicProfile" checked /> Public profile</label>
+                <label class="switch"><input type="checkbox" id="showEmail" /> Show email on profile</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <div class="overlay"></div>
+        <div class="sheet">
+            <div class="sheet-head">
+                <h3 id="helpTitle">Help & Support</h3>
+                <button class="close" data-close>✕</button>
+            </div>
+            <div class="form-grid">
+                <p>Need help? Email us at <a href="mailto:support@startup.example">support@startup.example</a> or check the FAQ.</p>
+                <a class="btn-outline" href="#">Open FAQ</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+        <div class="overlay"></div>
+        <div class="sheet">
+            <div class="sheet-head">
+                <h3 id="aboutTitle">About</h3>
+                <button class="close" data-close>✕</button>
+            </div>
+            <div class="form-grid">
+                <img src="assets/logo.svg" alt="Logo" style="width:56px;height:56px;border-radius:12px" />
+                <p>Start Up Prototype v0.1</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib.js"></script>
+    <script src="notification-service.js"></script>
+    <script>
+    // Load user data from localStorage
+    function loadUserData() {
+        const userData = localStorage.getItem('userData');
+        console.log('Profile page - Raw userData from localStorage:', userData);
+        
+        if (userData) {
+            const user = JSON.parse(userData);
+            console.log('Profile page - Parsed user data:', user);
+            
+            document.getElementById('userName').textContent = user.name || 'Unnamed User';
+            document.getElementById('userEmail').textContent = user.email || 'No email';
+            
+            // Update form fields
+            document.getElementById('nameField').value = user.name || '';
+            document.getElementById('emailDisplay').textContent = user.email || 'No email';
+        } else {
+            console.log('Profile page - No user data found, showing guest user');
+            // Default values if no user data
+            document.getElementById('userName').textContent = 'Guest User';
+            document.getElementById('userEmail').textContent = 'No account';
+            document.getElementById('nameField').value = '';
+            document.getElementById('emailDisplay').textContent = 'No email';
+        }
+    }
+
+    // Save user data to localStorage
+    async function saveUserData(name) {
+        const existingData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const userData = {
+            ...existingData,
+            name: name,
+            registeredAt: existingData.registeredAt || new Date().toISOString()
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Update the display immediately
+        document.getElementById('userName').textContent = name || 'Unnamed User';
+        
+        // Show a subtle save indicator
+        showSaveIndicator();
+        
+        console.log('User data saved:', userData);
+
+        // Also persist to server if available
+        try {
+            const resp = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify({ email: userData.email, name })
+            });
+            if (resp && resp.ok) {
+                const data = await resp.json();
+                if (data && data.user) {
+                    const merged = { ...userData, ...data.user };
+                    localStorage.setItem('userData', JSON.stringify(merged));
+                }
+            }
+        } catch (err) {
+            console.log('Profile save to server failed (will persist locally):', err.message);
+        }
+    }
+
+    // Show a subtle save indicator
+    function showSaveIndicator() {
+        const indicator = document.createElement('div');
+        indicator.textContent = '✓ Saved';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
+        document.body.appendChild(indicator);
+        
+        // Fade in
+        setTimeout(() => indicator.style.opacity = '1', 10);
+        
+        // Fade out and remove
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+            setTimeout(() => document.body.removeChild(indicator), 300);
+        }, 1500);
+    }
+
+    // Avatar upload with localStorage persistence
+    const avatarImg = document.getElementById('avatarImg');
+    const avatarBtn = document.getElementById('avatarBtn');
+    const avatarInput = document.getElementById('avatarInput');
+    const saved = (function(){
+        try {
+            const ud = JSON.parse(localStorage.getItem('userData') || '{}');
+            return ud.profile_picture || localStorage.getItem('avatarDataUrl');
+        } catch(_) { return localStorage.getItem('avatarDataUrl'); }
+    })();
+    if (saved) avatarImg.src = saved;
+    avatarBtn.addEventListener('click', () => avatarInput.click());
+    avatarInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const url = String(reader.result);
+            avatarImg.src = url;
+            localStorage.setItem('avatarDataUrl', url);
+            
+            // Persist avatar to server and update local userData
+            try {
+                const existingData = JSON.parse(localStorage.getItem('userData') || '{}');
+                console.log('Uploading avatar for user:', existingData.email);
+                
+                const resp = await fetch('/api/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    },
+                    body: JSON.stringify({ 
+                        email: existingData.email, 
+                        name: existingData.name, 
+                        profile_picture: url 
+                    })
+                });
+                
+                console.log('Avatar upload response status:', resp.status);
+                
+                if (resp && resp.ok) {
+                    const data = await resp.json();
+                    console.log('Avatar upload success, server response:', data);
+                    if (data && data.user) {
+                        const merged = { ...existingData, ...data.user };
+                        localStorage.setItem('userData', JSON.stringify(merged));
+                        console.log('Updated local userData with server response');
+                    }
+                    showSaveIndicator();
+                } else {
+                    const errorText = await resp.text();
+                    console.log('Avatar upload failed:', resp.status, errorText);
+                    showSaveIndicator(); // Still show saved locally
+                }
+            } catch (e) {
+                console.log('Saving avatar to server failed, kept locally:', e.message);
+                showSaveIndicator(); // Still show saved locally
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Settings modal logic
+    document.querySelectorAll('.setting[data-modal]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById(btn.dataset.modal)?.classList.add('show');
+        });
+    });
+    document.querySelectorAll('[data-close], .modal .overlay').forEach(el => {
+        el.addEventListener('click', () => el.closest('.modal')?.classList.remove('show'));
+    });
+
+    // Auto-save account changes when typing
+    const nameField = document.getElementById('nameField');
+    if (nameField) {
+        // Save on input change (as you type)
+        nameField.addEventListener('input', () => {
+            const name = nameField.value.trim();
+            if (name) {
+                saveUserData(name);
+                console.log('Name auto-saved:', name);
+            }
+        });
+        
+        // Also save when field loses focus
+        nameField.addEventListener('blur', () => {
+            const name = nameField.value.trim();
+            if (name) {
+                saveUserData(name);
+                console.log('Name saved on blur:', name);
+            }
+        });
+    }
+
+    // Remove the old save button functionality since we're auto-saving
+    const saveBtn = document.getElementById('saveAccount');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            // Just close the modal since changes are auto-saved
+            document.getElementById('accountModal').classList.remove('show');
+        });
+    }
+
+    // Sign out functionality
+    document.querySelector('.signout').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Are you sure you want to sign out?')) {
+            // Clear user data
+            localStorage.removeItem('userData');
+            localStorage.removeItem('avatarDataUrl');
+            localStorage.removeItem('authToken');
+            
+            // Redirect to login
+            window.location.href = 'login.html';
+        }
+    });
+
+    // Load notification settings
+    function loadNotificationSettings() {
+        const settings = window.notificationService.getNotificationSettings();
+        document.getElementById('replyNotif').checked = settings.replyNotif;
+        document.getElementById('postNotif').checked = settings.postNotif;
+    }
+    
+    // Save notification settings
+    function saveNotificationSettings() {
+        const settings = {
+            replyNotif: document.getElementById('replyNotif').checked,
+            postNotif: document.getElementById('postNotif').checked
+        };
+        window.notificationService.setNotificationSettings(settings);
+        console.log('Notification settings auto-saved:', settings);
+        
+        // Show save indicator
+        showSaveIndicator();
+    }
+
+    // Auto-save notification settings when toggled
+    const replyNotif = document.getElementById('replyNotif');
+    const postNotif = document.getElementById('postNotif');
+    
+    if (replyNotif) {
+        replyNotif.addEventListener('change', saveNotificationSettings);
+    }
+    
+    if (postNotif) {
+        postNotif.addEventListener('change', saveNotificationSettings);
+    }
+    
+    // Initialize profile on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadUserData();
+        loadNotificationSettings();
+        loadTierStatus();
+        
+        // Request notification permission
+        await window.notificationService.requestPermission();
+    });
+
+    // Load and display tier status
+    function loadTierStatus() {
+        const tier = Entitlements.getTier();
+        const tierDisplay = Entitlements.getTierDisplayName();
+        const tierStatus = document.getElementById('currentTierStatus');
+        const activateBtn = document.getElementById('activateDemoBtn');
+        
+        // Update tier display
+        tierStatus.textContent = tierDisplay;
+        
+        // Update styling based on tier
+        switch(tier) {
+            case 'premium':
+                tierStatus.style.background = '#eaf7f0';
+                tierStatus.style.color = '#1e7b4c';
+                activateBtn.style.display = 'none';
+                break;
+            case 'demo':
+                tierStatus.style.background = '#fef3c7';
+                tierStatus.style.color = '#92400e';
+                activateBtn.style.display = 'none';
+                break;
+            case 'none':
+            default:
+                tierStatus.style.background = '#f3f4f6';
+                tierStatus.style.color = '#6b7280';
+                activateBtn.style.display = 'block';
+                break;
+        }
+    }
+
+    // Activate demo tier
+    async function activateDemo() {
+        const activateBtn = document.getElementById('activateDemoBtn');
+        const originalText = activateBtn.textContent;
+        
+        try {
+            activateBtn.textContent = 'Activating...';
+            activateBtn.disabled = true;
+            
+            const response = await API.activateDemo();
+            
+            if (response.ok) {
+                // Update UI
+                loadTierStatus();
+                
+                // Show success message
+                alert('Demo activated successfully! You now have access to premium features.');
+            } else {
+                const error = await response.json();
+                alert('Failed to activate demo: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error activating demo:', error);
+            alert('Failed to activate demo. Please try again.');
+        } finally {
+            activateBtn.textContent = originalText;
+            activateBtn.disabled = false;
+        }
+    }
+
+    // Load privacy settings
+    function loadPrivacySettings() {
+        const settings = JSON.parse(localStorage.getItem('privacySettings') || '{"publicProfile": true, "showEmail": false}');
+        document.getElementById('publicProfile').checked = settings.publicProfile;
+        document.getElementById('showEmail').checked = settings.showEmail;
+    }
+    
+    // Save privacy settings
+    function savePrivacySettings() {
+        const settings = {
+            publicProfile: document.getElementById('publicProfile').checked,
+            showEmail: document.getElementById('showEmail').checked
+        };
+        localStorage.setItem('privacySettings', JSON.stringify(settings));
+        console.log('Privacy settings saved:', settings);
+        showSaveIndicator();
+    }
+    
+    // Auto-save privacy settings when toggled
+    const publicProfile = document.getElementById('publicProfile');
+    const showEmail = document.getElementById('showEmail');
+    
+    if (publicProfile) {
+        publicProfile.addEventListener('change', savePrivacySettings);
+    }
+    
+    if (showEmail) {
+        showEmail.addEventListener('change', savePrivacySettings);
+    }
+
+    // Add event listener for demo activation button
+    document.addEventListener('DOMContentLoaded', () => {
+        const activateBtn = document.getElementById('activateDemoBtn');
+        if (activateBtn) {
+            activateBtn.addEventListener('click', activateDemo);
+        }
+        
+        // Load privacy settings on page load
+        loadPrivacySettings();
+    });
+    </script>
+</body>
+</html>
+

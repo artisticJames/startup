@@ -1,0 +1,466 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start Up - Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+</head>
+<body>
+    <div class="frame">
+        <div class="device">
+            <div class="content">
+                <header class="app-header">
+                    <div class="brand">
+                        <img class="logo" src="assets/logo.svg" alt="Start Up logo" />
+                        <h1>Admin Panel</h1>
+                    </div>
+                    <div class="user-info" style="position:absolute;right:22px;top:22px;display:flex;align-items:center;gap:12px;">
+                        <span id="adminWelcomeText" class="muted-link" style="color:#6d7e78;font-size:14px;">Welcome!</span>
+                        <a class="muted-link" href="login.html" style="text-decoration:none;color:#6d7e78">Log out</a>
+                    </div>
+                </header>
+
+                <main class="admin-panel" style="padding:20px 16px 90px;max-width:100%;overflow-x:auto;">
+                    <div class="admin-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+                        <div class="stat-card" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px;text-align:center;">
+                            <h3 style="color:#1e7b4c;font-size:28px;margin:0;font-weight:800;">0</h3>
+                            <p style="color:#64748b;margin:6px 0 0;font-size:13px;">Total Users</p>
+                        </div>
+                        <div class="stat-card" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px;text-align:center;">
+                            <h3 style="color:#1e7b4c;font-size:28px;margin:0;font-weight:800;">0</h3>
+                            <p style="color:#64748b;margin:6px 0 0;font-size:13px;">Total Posts</p>
+                        </div>
+                        <div class="stat-card" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px;text-align:center;">
+                            <h3 style="color:#1e7b4c;font-size:28px;margin:0;font-weight:800;">0</h3>
+                            <p style="color:#64748b;margin:6px 0 0;font-size:13px;">Total Comments</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-sections" style="display:grid;gap:16px;">
+                        <section class="admin-section" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                                <h2 style="color:#1e7b4c;margin:0;font-size:18px;font-weight:700;">User Management</h2>
+                                <button id="refreshUsers" style="background:#eaf7f0;color:#1e7b4c;border:1px solid #c3e6d0;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;">Refresh</button>
+                            </div>
+                            <div class="user-list" id="userList" style="max-height:400px;overflow-y:auto;">
+                                <div class="loading" style="text-align:center;color:#64748b;padding:16px;">Loading users...</div>
+                            </div>
+                        </section>
+
+                        <section class="admin-section" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);padding:16px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                                <h2 style="color:#1e7b4c;margin:0;font-size:18px;font-weight:700;">Recent Posts</h2>
+                                <button id="refreshPosts" style="background:#eaf7f0;color:#1e7b4c;border:1px solid #c3e6d0;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;">Refresh</button>
+                            </div>
+                            <div class="posts-list" id="postsList" style="max-height:350px;overflow-y:auto;">
+                                <div class="loading" style="text-align:center;color:#64748b;padding:16px;">Loading posts...</div>
+                            </div>
+                        </section>
+
+                    </div>
+                </main>
+
+                <!-- User Detail Modal -->
+                <div id="userDetailModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;box-sizing:border-box;">
+                    <div class="modal-content" style="background:#fff;border-radius:16px;max-width:600px;max-height:80vh;margin:0 auto;overflow-y:auto;position:relative;">
+                        <div class="modal-header" style="padding:20px 20px 0;border-bottom:1px solid #e2e8f0;margin-bottom:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <h2 id="modalUserName" style="color:#1e7b4c;margin:0;font-size:24px;font-weight:700;">User Details</h2>
+                                <button id="closeUserModal" style="background:none;border:none;font-size:24px;cursor:pointer;color:#64748b;">&times;</button>
+                            </div>
+                        </div>
+                        <div class="modal-body" style="padding:0 20px 20px;">
+                            <div class="user-info-section" style="margin-bottom:24px;">
+                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+                                    <div class="info-card" style="background:#f8fafc;border-radius:12px;padding:16px;text-align:center;">
+                                        <h3 style="color:#1e7b4c;margin:0 0 8px;font-size:18px;">Premium Status</h3>
+                                        <span id="userPremiumStatus" class="premium-badge" style="display:inline-block;background:#f3f4f6;color:#6b7280;padding:6px 12px;border-radius:20px;font-size:14px;font-weight:600;">Non</span>
+                                    </div>
+                                    <div class="info-card" style="background:#f8fafc;border-radius:12px;padding:16px;text-align:center;">
+                                        <h3 style="color:#1e7b4c;margin:0 0 8px;font-size:18px;">Email Verified</h3>
+                                        <span id="userVerifiedStatus" class="verified-badge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:6px 12px;border-radius:20px;font-size:14px;font-weight:600;">Pending</span>
+                                    </div>
+                                    <div class="info-card" style="background:#f8fafc;border-radius:12px;padding:16px;text-align:center;">
+                                        <h3 style="color:#1e7b4c;margin:0 0 8px;font-size:18px;">Member Since</h3>
+                                        <span id="userJoinDate" style="color:#64748b;font-size:14px;">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="user-activity-section">
+                                <div style="display:grid;gap:20px;">
+                                    <div class="activity-section">
+                                        <h3 style="color:#1e7b4c;margin:0 0 12px;font-size:18px;font-weight:600;">Recent Posts</h3>
+                                        <div id="userPostsList" style="max-height:200px;overflow-y:auto;">
+                                            <div class="loading" style="text-align:center;color:#64748b;padding:20px;">Loading posts...</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="activity-section">
+                                        <h3 style="color:#1e7b4c;margin:0 0 12px;font-size:18px;font-weight:600;">Recent Comments</h3>
+                                        <div id="userCommentsList" style="max-height:200px;overflow-y:auto;">
+                                            <div class="loading" style="text-align:center;color:#64748b;padding:20px;">Loading comments...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Load and display user data
+    function loadUserData() {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+            const user = JSON.parse(userData);
+            const welcomeText = document.getElementById('adminWelcomeText');
+            if (welcomeText) {
+                welcomeText.textContent = `Welcome, ${user.name}!`;
+            }
+        } else {
+            const welcomeText = document.getElementById('adminWelcomeText');
+            if (welcomeText) {
+                welcomeText.textContent = 'Welcome, Admin!';
+            }
+        }
+    }
+
+    // Load users from server
+    async function loadUsers() {
+        try {
+            const response = await fetch('http://localhost:3000/api/admin/users');
+            const data = await response.json();
+            
+            if (response.ok) {
+                const userList = document.getElementById('userList');
+                userList.innerHTML = data.users.map(user => `
+                    <div class="user-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all 0.2s ease;flex-wrap:wrap;gap:8px;" onclick="showUserDetails('${user.email}')" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+                        <div style="flex:1;min-width:200px;">
+                            <strong style="display:block;margin-bottom:4px;">${user.name}</strong>
+                            <div style="color:#64748b;font-size:13px;word-break:break-all;">${user.email}</div>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                            <span class="status-badge" style="background:${user.verified ? '#eaf7f0' : '#fef3c7'};color:${user.verified ? '#1e7b4c' : '#92400e'};padding:3px 6px;border-radius:4px;font-size:11px;white-space:nowrap;">
+                                ${user.verified ? 'Verified' : 'Pending'}
+                            </span>
+                            <span class="ban-status-badge" style="background:${user.banned ? '#fee2e2' : '#eaf7f0'};color:${user.banned ? '#dc2626' : '#1e7b4c'};padding:3px 6px;border-radius:4px;font-size:11px;white-space:nowrap;">
+                                ${user.banned ? 'Banned' : 'Active'}
+                            </span>
+                            ${user.email !== 'admin@startup.com' ? `
+                                <button class="ban-btn" onclick="event.stopPropagation(); ${user.banned ? 'unbanUser' : 'banUser'}('${user.email}')" style="background:${user.banned ? '#10b981' : '#ef4444'};color:white;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;">
+                                    ${user.banned ? 'Unban' : 'Ban'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Update stats
+                document.querySelector('.stat-card h3').textContent = data.users.length;
+            } else {
+                document.getElementById('userList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Error loading users</div>';
+            }
+        } catch (error) {
+            document.getElementById('userList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Failed to load users</div>';
+        }
+    }
+
+    // Load posts from server
+    async function loadPosts() {
+        try {
+            const response = await fetch('http://localhost:3000/api/posts');
+            const data = await response.json();
+            
+            if (response.ok) {
+                const postsList = document.getElementById('postsList');
+                postsList.innerHTML = data.posts.slice(0, 5).map(post => {
+                    let attachmentsHtml = '';
+                    if (post.attachments && post.attachments.length > 0) {
+                        attachmentsHtml = '<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">';
+                        post.attachments.forEach(attachment => {
+                            if (attachment.type.startsWith('image/')) {
+                                attachmentsHtml += `<img src="${attachment.dataUrl}" alt="${attachment.name}" style="max-height:60px;border-radius:4px;border:1px solid #e2e8f0;" />`;
+                            } else {
+                                attachmentsHtml += `<span style="background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;font-size:11px;">📎 ${attachment.name}</span>`;
+                            }
+                        });
+                        attachmentsHtml += '</div>';
+                    }
+                    
+                    return `
+                        <div class="post-item" style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                                <strong>${post.user_name}</strong>
+                                <span style="color:#64748b;font-size:12px;">${new Date(post.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p style="margin:0;color:#374151;">${post.content}</p>
+                            ${attachmentsHtml}
+                        </div>
+                    `;
+                }).join('');
+                
+                // Update stats
+                document.querySelectorAll('.stat-card h3')[1].textContent = data.posts.length;
+                
+                // Calculate total comments
+                const totalComments = data.posts.reduce((total, post) => total + (post.comments ? post.comments.length : 0), 0);
+                document.querySelectorAll('.stat-card h3')[2].textContent = totalComments;
+            } else {
+                document.getElementById('postsList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Error loading posts</div>';
+            }
+        } catch (error) {
+            document.getElementById('postsList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Failed to load posts</div>';
+        }
+    }
+
+    // Show user details modal
+    async function showUserDetails(userEmail) {
+        try {
+            // Show modal
+            const modal = document.getElementById('userDetailModal');
+            modal.style.display = 'block';
+            
+            // Set user name in modal header
+            document.getElementById('modalUserName').textContent = `User Details - ${userEmail}`;
+            
+            // Load user data
+            const response = await fetch('http://localhost:3000/api/admin/users');
+            const data = await response.json();
+            
+            if (response.ok) {
+                const user = data.users.find(u => u.email === userEmail);
+                if (user) {
+                    // Update user info
+                    const userTier = user.tier || 'none';
+                    let tierDisplay, tierBg, tierColor;
+                    
+                    switch(userTier) {
+                        case 'premium':
+                            tierDisplay = 'Premium';
+                            tierBg = '#eaf7f0';
+                            tierColor = '#1e7b4c';
+                            break;
+                        case 'demo':
+                            tierDisplay = 'Demo';
+                            tierBg = '#fef3c7';
+                            tierColor = '#92400e';
+                            break;
+                        case 'none':
+                        default:
+                            tierDisplay = 'Non';
+                            tierBg = '#f3f4f6';
+                            tierColor = '#6b7280';
+                            break;
+                    }
+                    
+                    document.getElementById('userPremiumStatus').textContent = tierDisplay;
+                    document.getElementById('userPremiumStatus').style.background = tierBg;
+                    document.getElementById('userPremiumStatus').style.color = tierColor;
+                    
+                    document.getElementById('userVerifiedStatus').textContent = user.verified ? 'Verified' : 'Pending';
+                    document.getElementById('userVerifiedStatus').style.background = user.verified ? '#eaf7f0' : '#fef3c7';
+                    document.getElementById('userVerifiedStatus').style.color = user.verified ? '#1e7b4c' : '#92400e';
+                    
+                    document.getElementById('userJoinDate').textContent = user.registeredAt ? new Date(user.registeredAt).toLocaleDateString() : 'Unknown';
+                    
+                    // Load user posts
+                    await loadUserPosts(userEmail);
+                    
+                    // Load user comments
+                    await loadUserComments(userEmail);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user details:', error);
+        }
+    }
+    
+    // Load user posts
+    async function loadUserPosts(userEmail) {
+        try {
+            const response = await fetch('http://localhost:3000/api/posts');
+            const data = await response.json();
+            
+            if (response.ok) {
+                const userPosts = data.posts.filter(post => post.user_email === userEmail);
+                const postsList = document.getElementById('userPostsList');
+                
+                if (userPosts.length > 0) {
+                    postsList.innerHTML = userPosts.slice(0, 5).map(post => {
+                        let attachmentsHtml = '';
+                        if (post.attachments && post.attachments.length > 0) {
+                            attachmentsHtml = '<div style="margin-top:4px;display:flex;gap:2px;flex-wrap:wrap;">';
+                            post.attachments.forEach(attachment => {
+                                if (attachment.type.startsWith('image/')) {
+                                    attachmentsHtml += `<img src="${attachment.dataUrl}" alt="${attachment.name}" style="max-height:40px;border-radius:3px;border:1px solid #e2e8f0;" />`;
+                                } else {
+                                    attachmentsHtml += `<span style="background:#f1f5f9;color:#475569;padding:1px 4px;border-radius:3px;font-size:10px;">📎 ${attachment.name}</span>`;
+                                }
+                            });
+                            attachmentsHtml += '</div>';
+                        }
+                        
+                        return `
+                            <div style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">
+                                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                                    <strong>${post.user_name}</strong>
+                                    <span style="color:#64748b;font-size:12px;">${new Date(post.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <p style="margin:0;color:#374151;font-size:14px;">${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</p>
+                                ${attachmentsHtml}
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    postsList.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px;">No posts found</div>';
+                }
+            }
+        } catch (error) {
+            document.getElementById('userPostsList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Error loading posts</div>';
+        }
+    }
+    
+    // Load user comments
+    async function loadUserComments(userEmail) {
+        try {
+            const response = await fetch('http://localhost:3000/api/comments');
+            const data = await response.json();
+            
+            if (response.ok) {
+                const userComments = data.comments.filter(comment => comment.user_email === userEmail);
+                const commentsList = document.getElementById('userCommentsList');
+                
+                if (userComments.length > 0) {
+                    commentsList.innerHTML = userComments.slice(0, 5).map(comment => {
+                        let attachmentsHtml = '';
+                        if (comment.attachments && comment.attachments.length > 0) {
+                            attachmentsHtml = '<div style="margin-top:4px;display:flex;gap:2px;flex-wrap:wrap;">';
+                            comment.attachments.forEach(attachment => {
+                                if (attachment.type.startsWith('image/')) {
+                                    attachmentsHtml += `<img src="${attachment.dataUrl}" alt="${attachment.name}" style="max-height:40px;border-radius:3px;border:1px solid #e2e8f0;" />`;
+                                } else {
+                                    attachmentsHtml += `<span style="background:#f1f5f9;color:#475569;padding:1px 4px;border-radius:3px;font-size:10px;">📎 ${attachment.name}</span>`;
+                                }
+                            });
+                            attachmentsHtml += '</div>';
+                        }
+                        
+                        return `
+                            <div style="padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">
+                                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                                    <strong>${comment.user_name}</strong>
+                                    <span style="color:#64748b;font-size:12px;">${new Date(comment.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <p style="margin:0;color:#374151;font-size:14px;">${comment.content.substring(0, 100)}${comment.content.length > 100 ? '...' : ''}</p>
+                                ${attachmentsHtml}
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    commentsList.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px;">No comments found</div>';
+                }
+            }
+        } catch (error) {
+            document.getElementById('userCommentsList').innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Error loading comments</div>';
+        }
+    }
+    
+    // Close user modal
+    function closeUserModal() {
+        document.getElementById('userDetailModal').style.display = 'none';
+    }
+
+    // Ban user function
+    async function banUser(userEmail) {
+        if (!confirm(`Are you sure you want to ban ${userEmail}? This will prevent them from posting or commenting.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/admin/ban/${encodeURIComponent(userEmail)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify({ banned: true })
+            });
+
+            if (response.ok) {
+                alert('User banned successfully!');
+                loadUsers(); // Refresh user list
+            } else {
+                const error = await response.json();
+                alert('Error banning user: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error banning user:', error);
+            alert('Failed to ban user. Please try again.');
+        }
+    }
+
+    // Unban user function
+    async function unbanUser(userEmail) {
+        if (!confirm(`Are you sure you want to unban ${userEmail}? This will restore their posting and commenting privileges.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/admin/ban/${encodeURIComponent(userEmail)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify({ banned: false })
+            });
+
+            if (response.ok) {
+                alert('User unbanned successfully!');
+                loadUsers(); // Refresh user list
+            } else {
+                const error = await response.json();
+                alert('Error unbanning user: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error unbanning user:', error);
+            alert('Failed to unban user. Please try again.');
+        }
+    }
+
+    // System action handlers
+    function setupSystemActions() {
+        // Refresh buttons
+        document.getElementById('refreshUsers').addEventListener('click', loadUsers);
+        document.getElementById('refreshPosts').addEventListener('click', loadPosts);
+    }
+
+    // Initialize admin panel
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserData();
+        loadUsers();
+        loadPosts();
+        setupSystemActions();
+        
+        // Modal close functionality
+        document.getElementById('closeUserModal').addEventListener('click', closeUserModal);
+        document.getElementById('userDetailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'userDetailModal') {
+                closeUserModal();
+            }
+        });
+    });
+    </script>
+</body>
+</html>
