@@ -18,6 +18,14 @@ app.use(express.urlencoded({ limit: '50mb', extended: true })); // For form data
 // Serve static files from project root (../)
 app.use(express.static(path.join(__dirname, '..')));
 
+// Disable caching for API responses to ensure fresh comments/posts
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Explicit manifest route with proper headers
 app.get('/manifest.json', (req, res) => {
   const manifestPath = path.join(__dirname, '..', 'manifest.json');
@@ -502,11 +510,24 @@ app.delete('/api/posts/:postId', async (req, res) => {
 app.delete('/api/comments/:commentId', async (req, res) => {
   try {
     const { commentId } = req.params;
+    const { email, isAdmin } = req.body || {};
     
-    // Load existing comments and remove the one with matching ID
-    const comments = loadComments();
+    // Load existing comments
+    const comments = await loadComments();
+    const target = comments.find(c => c.id == commentId);
+    if (!target) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    // Only owner or admin can delete
+    const isOwner = email && target.user_email === email;
+    const allow = isOwner || !!isAdmin || (email === 'admin@startup.com');
+    if (!allow) {
+      return res.status(403).json({ error: 'Not allowed to delete this comment' });
+    }
+
     const updatedComments = comments.filter(comment => comment.id != commentId);
-    saveComments(updatedComments);
+    await saveComments(updatedComments);
     
     res.json({ 
       message: 'Comment deleted successfully'
