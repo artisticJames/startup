@@ -48,6 +48,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug storage status
+app.get('/api/debug/storage', async (req, res) => {
+  try {
+    const users = await loadUsers();
+    const posts = await loadPosts();
+    const comments = await loadComments();
+    const usersCount = Array.isArray(users) ? users.length : Object.keys(users || {}).length;
+    res.json({
+      mode: (require('./storage').state.mode),
+      counts: {
+        users: usersCount,
+        posts: (posts || []).length,
+        comments: (comments || []).length
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Test database connection
 app.get('/api/test-db', async (req, res) => {
   try {
