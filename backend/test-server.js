@@ -60,6 +60,37 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Test Gemini API endpoint
+app.get('/api/test-gemini', async (req, res) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ 
+        error: 'GEMINI_API_KEY not found',
+        hasApiKey: false 
+      });
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent("Say 'Hello, Gemini is working!'");
+    const response = result.response.text();
+
+    res.json({
+      success: true,
+      response: response,
+      hasApiKey: true,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    res.json({
+      error: 'Gemini test failed',
+      details: error.message,
+      code: error.code,
+      hasApiKey: !!process.env.GEMINI_API_KEY
+    });
+  }
+});
+
 // Debug storage status
 app.get('/api/debug/storage', async (req, res) => {
   try {
