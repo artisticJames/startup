@@ -211,14 +211,10 @@ app.post('/api/ai-search', async (req, res) => {
 
     // Check if we have Gemini API key and client
     if (!process.env.GEMINI_API_KEY || !genAI) {
-      console.log('No Gemini API key found, using fallback');
-      const fallbackResponse = getFallbackBusinessAdvice(query);
-      return res.json({
-        query: query,
-        response: fallbackResponse,
-        timestamp: new Date().toISOString(),
-        model: "fallback-advice",
-        note: "No Gemini API key, using fallback system"
+      console.log('No Gemini API key found');
+      return res.status(500).json({ 
+        error: 'AI service unavailable - Gemini API key not configured',
+        note: 'Please configure GEMINI_API_KEY environment variable'
       });
     }
     
@@ -258,201 +254,16 @@ Format your response with clear sections, bullet points, and emojis to make it e
       stack: error.stack
     });
     
-    // Fallback to curated advice if Gemini fails
-    console.log('Gemini API failed, using fallback');
-    const fallbackResponse = getFallbackBusinessAdvice(query || 'startup advice');
-    
-    res.json({
-      query: query || 'startup advice',
-      response: fallbackResponse,
-      timestamp: new Date().toISOString(),
-      model: "fallback-advice",
-      note: "Gemini API failed, using fallback system"
+    // Return error if Gemini fails
+    console.log('Gemini API failed');
+    res.status(500).json({
+      error: 'AI service temporarily unavailable',
+      message: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 });
 
-// Enhanced business advice function with better matching
-function getFallbackBusinessAdvice(query) {
-  const queryLower = query.toLowerCase().trim();
-  
-  // Handle specific questions and topics
-  if (queryLower.includes('validate') || queryLower.includes('idea') || queryLower.includes('test') || queryLower.includes('prove') || queryLower.includes('check')) {
-    return `**Idea Validation Strategy:**
-
-To validate your startup idea effectively:
-
-🎯 **Customer Discovery**
-• Interview 50+ potential customers face-to-face
-• Ask about their current pain points and solutions
-• Understand their willingness to pay
-
-📊 **Market Research**
-• Analyze competitors and their pricing
-• Identify market size and growth potential
-• Find gaps in existing solutions
-
-🧪 **Build & Test**
-• Create a simple landing page with signup
-• Build an MVP with core features only
-• Test pricing with real customers
-
-💡 **Key Insight:** Most successful startups pivot based on customer feedback, not assumptions.`;
-  }
-  
-  if (queryLower.includes('funding') || queryLower.includes('raise') || queryLower.includes('invest') || queryLower.includes('money') || queryLower.includes('capital') || queryLower.includes('investor')) {
-    return `**Startup Funding Guide:**
-
-💰 **Funding Stages**
-• **Bootstrap:** Use personal savings and revenue
-• **Friends & Family:** $10K-$100K for early development
-• **Angel Investors:** $100K-$1M for product-market fit
-• **VC Series A:** $1M+ for scaling
-
-🎯 **Preparation Checklist**
-• Clear problem-solution fit
-• Proven traction (users, revenue, growth)
-• Strong founding team
-• Scalable business model
-
-📈 **Pitch Essentials**
-• 10-slide deck maximum
-• Demo your product live
-• Show clear revenue projections
-• Highlight competitive advantages
-
-💡 **Pro Tip:** Investors invest in people and traction, not just ideas.`;
-  }
-  
-  if (queryLower.includes('marketing') || queryLower.includes('customer') || queryLower.includes('promote') || queryLower.includes('advertise') || queryLower.includes('sell') || queryLower.includes('growth')) {
-    return `**Startup Marketing Playbook:**
-
-🚀 **Growth Strategies**
-• **Content Marketing:** Blog, videos, podcasts
-• **Social Media:** Build community on relevant platforms
-• **SEO:** Optimize for search visibility
-• **Partnerships:** Collaborate with complementary businesses
-
-📊 **Customer Acquisition**
-• **Referral Programs:** Incentivize existing customers
-• **Influencer Marketing:** Partner with industry experts
-• **Paid Advertising:** Start small, scale what works
-• **Events:** Attend and speak at industry conferences
-
-🎯 **Focus Strategy**
-• Master one channel before expanding
-• Track customer acquisition cost (CAC)
-• Measure lifetime value (LTV)
-• Aim for LTV:CAC ratio of 3:1 or higher`;
-  }
-  
-  if (queryLower.includes('build') || queryLower.includes('create') || queryLower.includes('develop') || queryLower.includes('product') || queryLower.includes('mvp') || queryLower.includes('app')) {
-    return `**Product Development Framework:**
-
-🛠️ **MVP Strategy**
-• Start with one core feature
-• Solve the most important problem first
-• Build for your first 100 users
-• Get feedback before adding features
-
-⚡ **Development Process**
-• **Week 1-2:** Define core features
-• **Week 3-4:** Build basic functionality
-• **Week 5-6:** Test with real users
-• **Week 7-8:** Iterate based on feedback
-
-🎯 **Success Metrics**
-• User engagement and retention
-• Time to value for new users
-• Customer satisfaction scores
-• Feature usage analytics
-
-💡 **Remember:** Perfect is the enemy of good. Ship early, learn fast.`;
-  }
-  
-  if (queryLower.includes('team') || queryLower.includes('hire') || queryLower.includes('employee') || queryLower.includes('cofounder') || queryLower.includes('recruit')) {
-    return `**Building Your Startup Team:**
-
-👥 **Hiring Strategy**
-• **Co-founders:** Find complementary skills
-• **Early hires:** Culture fit over experience
-• **Contractors first:** Test roles before full-time
-• **Remote-friendly:** Access global talent pool
-
-🎯 **Key Roles to Fill**
-• **Technical:** Developers, designers
-• **Business:** Sales, marketing, operations
-• **Advisors:** Industry experts and mentors
-
-📋 **Hiring Process**
-• Define clear job descriptions
-• Test skills with practical tasks
-• Check references thoroughly
-• Offer equity to key hires
-
-💡 **Culture Tip:** Your first 10 hires will define your company culture.`;
-  }
-  
-  if (queryLower.includes('revenue') || queryLower.includes('profit') || queryLower.includes('business model') || queryLower.includes('monetize') || queryLower.includes('pricing')) {
-    return `**Revenue & Business Models:**
-
-💰 **Popular Revenue Models**
-• **Subscription:** Recurring monthly/yearly fees
-• **Marketplace:** Commission on transactions
-• **Freemium:** Free tier + premium features
-• **One-time:** Single purchase products
-
-📊 **Pricing Strategy**
-• Start high and adjust down
-• Price based on value delivered
-• Test different price points
-• Consider tiered pricing options
-
-🎯 **Revenue Metrics**
-• Monthly Recurring Revenue (MRR)
-• Customer Acquisition Cost (CAC)
-• Lifetime Value (LTV)
-• Churn rate and retention
-
-💡 **Golden Rule:** Revenue solves most startup problems.`;
-  }
-  
-  if (queryLower.includes('why') || queryLower.includes('what') || queryLower.includes('how') || queryLower.includes('when') || queryLower.includes('where')) {
-    return `**Startup Success Framework:**
-
-🎯 **The "Why" Behind Startups**
-• **Problem:** What pain point are you solving?
-• **Solution:** How does your product help?
-• **Market:** Who will pay for this solution?
-• **Timing:** Why now vs. later?
-
-🚀 **Success Factors**
-• **Team:** Right people with complementary skills
-• **Product:** Something people actually want
-• **Market:** Large enough opportunity
-• **Execution:** Ability to deliver results
-
-💡 **Key Insight:** Most startups fail because they build something nobody wants, not because of technical issues.`;
-  }
-  
-  // Default response for any other query
-  return `**Startup Success Guide:**
-
-🎯 **Core Principles**
-• **Start with the problem** - Solve real pain points
-• **Know your customer** - Build for specific users
-• **Keep it simple** - MVP first, features later
-• **Get feedback early** - Talk to users constantly
-• **Focus on revenue** - Money validates everything
-
-🚀 **Next Steps**
-• Validate your idea with 50+ customer interviews
-• Build a simple MVP in 2-4 weeks
-• Get your first 10 paying customers
-• Iterate based on their feedback
-
-💡 **Remember:** Most successful startups pivot from their original idea based on customer feedback.`;
-}
 
 // Registration endpoint
 app.post('/api/register', async (req, res) => {
