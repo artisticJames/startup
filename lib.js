@@ -220,16 +220,153 @@ const UIEffects = {
     const search = document.getElementById(searchId);
     if (!search) return;
 
+    let searchTimeout;
+    let aiSearchResults = null;
+
     search.addEventListener('input', () => {
-      const query = search.value.trim().toLowerCase();
+      const query = search.value.trim();
+      
+      // Clear previous timeout
+      clearTimeout(searchTimeout);
+      
+      if (query.length === 0) {
+        // Show all cards when search is empty
+        document.querySelectorAll(targetSelector).forEach(element => {
+          const container = element.closest('.card') || element.closest('li');
+          if (container) {
+            container.style.display = '';
+          }
+        });
+        hideAISearchResults();
+        return;
+      }
+
+      // Regular text-based filtering for immediate results
+      const queryLower = query.toLowerCase();
       document.querySelectorAll(targetSelector).forEach(element => {
-        const match = element.textContent.toLowerCase().includes(query);
+        const match = element.textContent.toLowerCase().includes(queryLower);
         const container = element.closest('.card') || element.closest('li');
         if (container) {
           container.style.display = match ? '' : 'none';
         }
       });
+
+      // AI search after user stops typing (debounced)
+      searchTimeout = setTimeout(async () => {
+        if (query.length >= 3) { // Only search for queries with 3+ characters
+          await performAISearch(query);
+        }
+      }, 1000); // Wait 1 second after user stops typing
     });
+
+    // Handle Enter key for immediate AI search
+    search.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = search.value.trim();
+        if (query.length >= 3) {
+          await performAISearch(query);
+        }
+      }
+    });
+
+    async function performAISearch(query) {
+      try {
+        // Show loading state
+        showAISearchLoading();
+        
+        const response = await fetch('/api/ai-search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          showAISearchResults(data);
+        } else {
+          const error = await response.json();
+          showAISearchError(error.error || 'AI search failed');
+        }
+      } catch (error) {
+        console.error('AI search error:', error);
+        showAISearchError('Network error. Please try again.');
+      }
+    }
+
+    function showAISearchLoading() {
+      hideAISearchResults();
+      
+      const loadingDiv = document.createElement('div');
+      loadingDiv.id = 'ai-search-loading';
+      loadingDiv.innerHTML = `
+        <div style="padding: 20px; text-align: center; background: #f8f9fa; border-radius: 8px; margin: 10px 0;">
+          <div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #1f7a4c; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite;"></div>
+          <p style="margin: 10px 0 0; color: #6d7e78;">AI is analyzing your business question...</p>
+        </div>
+      `;
+      
+      const searchContainer = search.closest('.search') || search.parentElement;
+      searchContainer.appendChild(loadingDiv);
+    }
+
+    function showAISearchResults(data) {
+      hideAISearchResults();
+      
+      const resultsDiv = document.createElement('div');
+      resultsDiv.id = 'ai-search-results';
+      resultsDiv.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1f7a4c, #2d8f5f); color: white; padding: 20px; border-radius: 12px; margin: 10px 0; box-shadow: 0 4px 12px rgba(31, 122, 76, 0.3);">
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; margin-right: 12px;">
+              🤖
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 18px; font-weight: 600;">AI Business Advisor</h3>
+              <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Search: "${data.query}"</p>
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; line-height: 1.6;">
+            ${data.response.replace(/\n/g, '<br>')}
+          </div>
+          <div style="margin-top: 12px; font-size: 12px; opacity: 0.8;">
+            Powered by GPT-3.5 • ${new Date(data.timestamp).toLocaleTimeString()}
+          </div>
+        </div>
+      `;
+      
+      const searchContainer = search.closest('.search') || search.parentElement;
+      searchContainer.appendChild(resultsDiv);
+    }
+
+    function showAISearchError(message) {
+      hideAISearchResults();
+      
+      const errorDiv = document.createElement('div');
+      errorDiv.id = 'ai-search-error';
+      errorDiv.innerHTML = `
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 16px; border-radius: 8px; margin: 10px 0;">
+          <div style="display: flex; align-items: center;">
+            <span style="margin-right: 8px;">⚠️</span>
+            <span>${message}</span>
+          </div>
+        </div>
+      `;
+      
+      const searchContainer = search.closest('.search') || search.parentElement;
+      searchContainer.appendChild(errorDiv);
+    }
+
+    function hideAISearchResults() {
+      const existing = document.getElementById('ai-search-loading') || 
+                     document.getElementById('ai-search-results') || 
+                     document.getElementById('ai-search-error');
+      if (existing) {
+        existing.remove();
+      }
+    }
   }
 };
 

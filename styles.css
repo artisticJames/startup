@@ -398,3 +398,9 @@ body{
 .ad-slot small{color:#7e8d87}
 .ad-cta{border:0;background:#eaf7f0;color:#1e7b4c;font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;text-decoration:none}
 
+/* AI Search Loading Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

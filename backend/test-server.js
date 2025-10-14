@@ -2,11 +2,17 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
+const OpenAI = require('openai');
 require('dotenv').config({ path: './config.env' });
 
 const app = express();
 const { state, loadUsers, saveUsers, loadPosts, savePosts, loadComments, saveComments } = require('./storage');
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // Storage backed by MongoDB if MONGODB_URI is set, else file fallback
 
@@ -138,6 +144,67 @@ app.get('/api/quote', async (req, res) => {
       text: 'The only way to do great work is to love what you do.',
       author: 'Steve Jobs',
       source: 'fallback'
+    });
+  }
+});
+
+// AI-powered business search endpoint
+app.post('/api/ai-search', async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query || query.trim().length === 0) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ 
+        error: 'AI search is not configured. Please set OPENAI_API_KEY environment variable.' 
+      });
+    }
+
+    // Create a business-focused prompt
+    const prompt = `You are a business consultant and startup advisor. A user is searching for: "${query}"
+
+Please provide a comprehensive business-focused response that includes:
+1. Key insights and advice related to their search
+2. Practical steps or recommendations
+3. Common challenges and how to overcome them
+4. Resources or tools they might find useful
+5. Market trends or opportunities if relevant
+
+Keep the response professional, actionable, and focused on business/startup success. Limit to 300 words.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert business consultant specializing in startups, entrepreneurship, and business strategy. Provide practical, actionable advice."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    });
+
+    const aiResponse = completion.choices[0].message.content;
+
+    res.json({
+      query: query,
+      response: aiResponse,
+      timestamp: new Date().toISOString(),
+      model: "gpt-3.5-turbo"
+    });
+
+  } catch (error) {
+    console.error('AI search error:', error);
+    res.status(500).json({ 
+      error: 'AI search failed. Please try again later.',
+      details: error.message 
     });
   }
 });
