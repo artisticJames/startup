@@ -318,7 +318,7 @@ const UIEffects = {
       const resultsDiv = document.createElement('div');
       resultsDiv.id = 'ai-search-results';
       resultsDiv.innerHTML = `
-        <div style="background: linear-gradient(135deg, #1f7a4c, #2d8f5f); color: white; padding: 20px; border-radius: 12px; margin: 10px 0; box-shadow: 0 4px 12px rgba(31, 122, 76, 0.3);">
+        <div style="background: linear-gradient(135deg, #1f7a4c, #2d8f5f); color: white; padding: 20px; border-radius: 12px; margin: 10px 0; box-shadow: 0 4px 12px rgba(31, 122, 76, 0.3); max-width: 100%; max-height: 400px; overflow-y: auto;">
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; margin-right: 12px;">
               🤖
@@ -328,7 +328,7 @@ const UIEffects = {
               <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Search: "${data.query}"</p>
             </div>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; line-height: 1.6;">
+          <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; line-height: 1.6; max-height: 300px; overflow-y: auto;">
             ${data.response.replace(/\n/g, '<br>')}
           </div>
           <div style="margin-top: 12px; font-size: 12px; opacity: 0.8;">

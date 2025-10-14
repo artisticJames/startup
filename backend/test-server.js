@@ -244,7 +244,8 @@ app.post('/api/ai-search', async (req, res) => {
 function getFallbackBusinessAdvice(query) {
   const queryLower = query.toLowerCase();
   
-  if (queryLower.includes('validate') || queryLower.includes('idea')) {
+  // More comprehensive keyword matching for better search
+  if (queryLower.includes('validate') || queryLower.includes('idea') || queryLower.includes('test') || queryLower.includes('prove')) {
     return `To validate your startup idea:
 
 1. **Talk to potential customers** - Interview 50+ people who would use your product
@@ -256,7 +257,7 @@ function getFallbackBusinessAdvice(query) {
 The key is getting real feedback from real users, not just friends and family.`;
   }
   
-  if (queryLower.includes('funding') || queryLower.includes('raise')) {
+  if (queryLower.includes('funding') || queryLower.includes('raise') || queryLower.includes('invest') || queryLower.includes('money') || queryLower.includes('capital')) {
     return `Raising startup funding:
 
 1. **Bootstrap first** - Use your own money and revenue to prove the concept
@@ -268,7 +269,7 @@ The key is getting real feedback from real users, not just friends and family.`;
 Remember: investors invest in people and traction, not just ideas.`;
   }
   
-  if (queryLower.includes('marketing') || queryLower.includes('customer')) {
+  if (queryLower.includes('marketing') || queryLower.includes('customer') || queryLower.includes('promote') || queryLower.includes('advertise') || queryLower.includes('sell')) {
     return `Startup marketing strategies:
 
 1. **Content marketing** - Create valuable content that attracts your target audience
@@ -280,8 +281,44 @@ Remember: investors invest in people and traction, not just ideas.`;
 Focus on one channel first, master it, then expand to others.`;
   }
   
-  // Default business advice
-  return `Here's some general startup advice:
+  if (queryLower.includes('build') || queryLower.includes('create') || queryLower.includes('develop') || queryLower.includes('product') || queryLower.includes('mvp')) {
+    return `Building your startup product:
+
+1. **Start with the problem** - Clearly define the pain point you're solving
+2. **Build an MVP** - Create the minimum viable product with core features only
+3. **Get user feedback** - Test with real users early and often
+4. **Iterate quickly** - Make improvements based on feedback
+5. **Focus on one feature** - Don't try to build everything at once
+
+Remember: perfect is the enemy of good. Ship early, learn fast.`;
+  }
+  
+  if (queryLower.includes('team') || queryLower.includes('hire') || queryLower.includes('employee') || queryLower.includes('cofounder')) {
+    return `Building your startup team:
+
+1. **Start with co-founders** - Find people who complement your skills
+2. **Hire for culture fit** - Skills can be learned, attitude is harder to change
+3. **Start small** - Hire only when you absolutely need to
+4. **Use contractors first** - Test roles before making full-time hires
+5. **Create clear roles** - Define responsibilities and expectations
+
+Remember: your first hires will shape your company culture.`;
+  }
+  
+  if (queryLower.includes('revenue') || queryLower.includes('profit') || queryLower.includes('business model') || queryLower.includes('monetize')) {
+    return `Startup revenue strategies:
+
+1. **Choose your model** - Subscription, marketplace, freemium, or one-time sales
+2. **Test pricing** - Start high and adjust based on customer feedback
+3. **Focus on value** - Price based on value delivered, not cost to build
+4. **Start charging early** - Don't wait until you're "ready"
+5. **Track key metrics** - Revenue, customer acquisition cost, lifetime value
+
+Remember: revenue solves most startup problems.`;
+  }
+  
+  // Enhanced default advice for any query
+  return `Here's some general startup advice based on your question:
 
 1. **Start with the problem** - Make sure you're solving a real pain point
 2. **Know your customer** - Understand who you're building for
