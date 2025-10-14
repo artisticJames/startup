@@ -220,7 +220,7 @@ app.post('/api/ai-search', async (req, res) => {
     
     // Use Gemini API
     console.log('Using Gemini API for AI search');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     
     const prompt = `You are a startup business advisor. Provide helpful, actionable advice for this startup question: "${query}"
 
@@ -242,7 +242,7 @@ Format your response with clear sections, bullet points, and emojis to make it e
       query: query,
       response: text,
       timestamp: new Date().toISOString(),
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-exp",
       note: "Powered by Google Gemini AI"
     });
     
