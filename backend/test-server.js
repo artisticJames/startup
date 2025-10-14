@@ -199,53 +199,29 @@ app.get('/api/quote', async (req, res) => {
 // AI-powered business search endpoint using Google Gemini
 app.post('/api/ai-search', async (req, res) => {
   try {
+    console.log('AI Search endpoint called');
     const { query } = req.body;
     
     console.log('AI Search Request:', { query, hasApiKey: !!process.env.GEMINI_API_KEY });
     
     if (!query || query.trim().length === 0) {
+      console.log('Empty query received');
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    // Check if we have Gemini API key and client
-    if (!process.env.GEMINI_API_KEY || !genAI) {
-      console.log('No Gemini API key found, using fallback');
-      const fallbackResponse = getFallbackBusinessAdvice(query);
-      return res.json({
-        query: query,
-        response: fallbackResponse,
-        timestamp: new Date().toISOString(),
-        model: "fallback-advice",
-        note: "Using fallback business advice system"
-      });
-    }
+    // Always use fallback for now to prevent crashes
+    console.log('Using fallback business advice system');
+    const fallbackResponse = getFallbackBusinessAdvice(query);
     
-    // Use Gemini API
-    console.log('Using Gemini API for AI search');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    const prompt = `You are a startup business advisor. Provide helpful, actionable advice for this startup question: "${query}"
-
-Please provide:
-1. Clear, practical advice
-2. Specific steps they can take
-3. Common mistakes to avoid
-4. Resources or next steps
-
-Format your response with clear sections, bullet points, and emojis to make it engaging and easy to read. Keep it professional but friendly.`;
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
+    console.log('Sending fallback response');
     return res.json({
       query: query,
-      response: text,
+      response: fallbackResponse,
       timestamp: new Date().toISOString(),
-      model: "gemini-1.5-flash",
-      note: "Powered by Google Gemini AI"
+      model: "fallback-advice",
+      note: "Using fallback business advice system"
     });
-
+    
   } catch (error) {
     console.error('AI search error details:', {
       message: error.message,
@@ -254,8 +230,8 @@ Format your response with clear sections, bullet points, and emojis to make it e
       stack: error.stack
     });
     
-    // Fallback to curated advice if Gemini fails
-    console.log('Gemini API failed, using fallback');
+    // Fallback to curated advice if everything fails
+    console.log('Using final fallback');
     const fallbackResponse = getFallbackBusinessAdvice(query || 'startup advice');
     
     res.json({
@@ -263,7 +239,7 @@ Format your response with clear sections, bullet points, and emojis to make it e
       response: fallbackResponse,
       timestamp: new Date().toISOString(),
       model: "fallback-advice",
-      note: "Gemini API unavailable, using fallback system"
+      note: "Using fallback business advice system"
     });
   }
 });
