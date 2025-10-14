@@ -315,7 +315,6 @@ Focus on one channel first, master it, then expand to others.`;
 
 Remember: most successful startups pivot from their original idea based on customer feedback.`;
 }
-});
 
 // Registration endpoint
 app.post('/api/register', async (req, res) => {
