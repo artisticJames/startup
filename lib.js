@@ -332,7 +332,7 @@ const UIEffects = {
             ${data.response.replace(/\n/g, '<br>')}
           </div>
           <div style="margin-top: 12px; font-size: 12px; opacity: 0.8;">
-            Powered by GPT-3.5 • ${new Date(data.timestamp).toLocaleTimeString()}
+            Powered by Google Gemini • ${new Date(data.timestamp).toLocaleTimeString()}
           </div>
         </div>
       `;

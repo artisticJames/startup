@@ -2,17 +2,15 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config({ path: './config.env' });
 
 const app = express();
 const { state, loadUsers, saveUsers, loadPosts, savePosts, loadComments, saveComments } = require('./storage');
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize Google Gemini AI client
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Storage backed by MongoDB if MONGODB_URI is set, else file fallback
 
@@ -148,7 +146,7 @@ app.get('/api/quote', async (req, res) => {
   }
 });
 
-// AI-powered business search endpoint
+// AI-powered business search endpoint using Google Gemini
 app.post('/api/ai-search', async (req, res) => {
   try {
     const { query } = req.body;
@@ -157,9 +155,9 @@ app.post('/api/ai-search', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ 
-        error: 'AI search is not configured. Please set OPENAI_API_KEY environment variable.' 
+        error: 'AI search is not configured. Please set GEMINI_API_KEY environment variable.' 
       });
     }
 
@@ -175,29 +173,17 @@ Please provide a comprehensive business-focused response that includes:
 
 Keep the response professional, actionable, and focused on business/startup success. Limit to 300 words.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert business consultant specializing in startups, entrepreneurship, and business strategy. Provide practical, actionable advice."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 500,
-      temperature: 0.7
-    });
+    // Get the Gemini model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    const aiResponse = completion.choices[0].message.content;
+    const result = await model.generateContent(prompt);
+    const aiResponse = result.response.text();
 
     res.json({
       query: query,
       response: aiResponse,
       timestamp: new Date().toISOString(),
-      model: "gpt-3.5-turbo"
+      model: "gemini-pro"
     });
 
   } catch (error) {
