@@ -55,7 +55,7 @@ app.get(['/service-worker.js', '/sw.js'], (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
-    message: 'Start Up API is running',
+    message: 'Start Up API is running - syntax fixed',
     timestamp: new Date().toISOString()
   });
 });
