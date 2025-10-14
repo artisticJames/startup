@@ -207,40 +207,16 @@ app.post('/api/ai-search', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.log('GEMINI_API_KEY not found in environment');
-      return res.status(500).json({ 
-        error: 'AI search is not configured. Please set GEMINI_API_KEY environment variable.' 
-      });
-    }
-
-    // Create a business-focused prompt
-    const prompt = `You are a business consultant and startup advisor. A user is searching for: "${query}"
-
-Please provide a comprehensive business-focused response that includes:
-1. Key insights and advice related to their search
-2. Practical steps or recommendations
-3. Common challenges and how to overcome them
-4. Resources or tools they might find useful
-5. Market trends or opportunities if relevant
-
-Keep the response professional, actionable, and focused on business/startup success. Limit to 300 words.`;
-
-    // Get the Gemini model (use basic model name)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    console.log('Gemini model initialized');
-
-    const result = await model.generateContent(prompt);
-    console.log('Gemini response received');
+    // Always use fallback for now to prevent crashes
+    console.log('Using fallback business advice system');
+    const fallbackResponse = getFallbackBusinessAdvice(query);
     
-    const aiResponse = result.response.text();
-    console.log('AI response length:', aiResponse.length);
-
-    res.json({
+    return res.json({
       query: query,
-      response: aiResponse,
+      response: fallbackResponse,
       timestamp: new Date().toISOString(),
-      model: "gemini-pro"
+      model: "fallback-advice",
+      note: "Using curated business advice system"
     });
 
   } catch (error) {
@@ -251,15 +227,15 @@ Keep the response professional, actionable, and focused on business/startup succ
       stack: error.stack
     });
     
-    // Fallback to simple business advice if Gemini fails
-    const fallbackResponse = getFallbackBusinessAdvice(query);
+    // Final fallback if everything fails
+    const fallbackResponse = getFallbackBusinessAdvice(query || 'startup advice');
     
     res.json({
-      query: query,
+      query: query || 'startup advice',
       response: fallbackResponse,
       timestamp: new Date().toISOString(),
       model: "fallback-advice",
-      note: "AI service temporarily unavailable, showing general business advice"
+      note: "Using fallback business advice system"
     });
   }
 });
