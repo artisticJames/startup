@@ -70,7 +70,7 @@ app.get('/api/test-gemini', async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent("Say 'Hello, Gemini is working!'");
     const response = result.response.text();
 
@@ -207,8 +207,8 @@ Please provide a comprehensive business-focused response that includes:
 
 Keep the response professional, actionable, and focused on business/startup success. Limit to 300 words.`;
 
-    // Get the Gemini model (latest model name)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    // Get the Gemini model (use stable model name)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     console.log('Gemini model initialized');
 
     const result = await model.generateContent(prompt);
@@ -221,7 +221,7 @@ Keep the response professional, actionable, and focused on business/startup succ
       query: query,
       response: aiResponse,
       timestamp: new Date().toISOString(),
-      model: "gemini-2.0-flash-exp"
+      model: "gemini-1.5-flash"
     });
 
   } catch (error) {
