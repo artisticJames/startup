@@ -9,8 +9,8 @@ const app = express();
 const { state, loadUsers, saveUsers, loadPosts, savePosts, loadComments, saveComments } = require('./storage');
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-// Initialize Google Gemini AI client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Google Gemini AI client (only if API key is available)
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
 // Storage backed by MongoDB if MONGODB_URI is set, else file fallback
 
@@ -207,8 +207,8 @@ app.post('/api/ai-search', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    // Check if we have Gemini API key
-    if (!process.env.GEMINI_API_KEY) {
+    // Check if we have Gemini API key and client
+    if (!process.env.GEMINI_API_KEY || !genAI) {
       console.log('No Gemini API key found, using fallback');
       const fallbackResponse = getFallbackBusinessAdvice(query);
       return res.json({
