@@ -70,15 +70,34 @@ app.get('/api/test-gemini', async (req, res) => {
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent("Say 'Hello, Gemini is working!'");
-    const response = result.response.text();
+    // Try different model names
+    const modelsToTry = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Trying model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent("Say 'Hello, Gemini is working!'");
+        const response = result.response.text();
 
+        return res.json({
+          success: true,
+          response: response,
+          workingModel: modelName,
+          hasApiKey: true,
+          timestamp: new Date().toISOString()
+        });
+      } catch (modelError) {
+        console.log(`Model ${modelName} failed:`, modelError.message);
+        continue;
+      }
+    }
+
+    // If all models failed
     res.json({
-      success: true,
-      response: response,
-      hasApiKey: true,
-      timestamp: new Date().toISOString()
+      error: 'All Gemini models failed',
+      details: 'Tried gemini-pro, gemini-1.5-flash, gemini-1.5-pro',
+      hasApiKey: true
     });
 
   } catch (error) {
@@ -207,8 +226,8 @@ Please provide a comprehensive business-focused response that includes:
 
 Keep the response professional, actionable, and focused on business/startup success. Limit to 300 words.`;
 
-    // Get the Gemini model (use stable model name)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Get the Gemini model (use basic model name)
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     console.log('Gemini model initialized');
 
     const result = await model.generateContent(prompt);
@@ -221,7 +240,7 @@ Keep the response professional, actionable, and focused on business/startup succ
       query: query,
       response: aiResponse,
       timestamp: new Date().toISOString(),
-      model: "gemini-1.5-flash"
+      model: "gemini-pro"
     });
 
   } catch (error) {
