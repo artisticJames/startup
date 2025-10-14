@@ -251,12 +251,70 @@ Keep the response professional, actionable, and focused on business/startup succ
       stack: error.stack
     });
     
-    res.status(500).json({ 
-      error: 'AI search failed. Please try again later.',
-      details: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
+    // Fallback to simple business advice if Gemini fails
+    const fallbackResponse = getFallbackBusinessAdvice(query);
+    
+    res.json({
+      query: query,
+      response: fallbackResponse,
+      timestamp: new Date().toISOString(),
+      model: "fallback-advice",
+      note: "AI service temporarily unavailable, showing general business advice"
     });
   }
+});
+
+// Fallback business advice function
+function getFallbackBusinessAdvice(query) {
+  const queryLower = query.toLowerCase();
+  
+  if (queryLower.includes('validate') || queryLower.includes('idea')) {
+    return `To validate your startup idea:
+
+1. **Talk to potential customers** - Interview 50+ people who would use your product
+2. **Build a simple MVP** - Create the simplest version that solves the core problem
+3. **Test pricing** - See if people will actually pay for your solution
+4. **Analyze competition** - Research existing solutions and find your unique angle
+5. **Measure demand** - Use surveys, landing pages, or pre-orders to gauge interest
+
+The key is getting real feedback from real users, not just friends and family.`;
+  }
+  
+  if (queryLower.includes('funding') || queryLower.includes('raise')) {
+    return `Raising startup funding:
+
+1. **Bootstrap first** - Use your own money and revenue to prove the concept
+2. **Prepare your pitch** - Create a compelling story about the problem and solution
+3. **Network actively** - Attend startup events, join accelerators, connect on LinkedIn
+4. **Start with angels** - Individual investors are often easier to reach than VCs
+5. **Show traction** - Demonstrate user growth, revenue, or other key metrics
+
+Remember: investors invest in people and traction, not just ideas.`;
+  }
+  
+  if (queryLower.includes('marketing') || queryLower.includes('customer')) {
+    return `Startup marketing strategies:
+
+1. **Content marketing** - Create valuable content that attracts your target audience
+2. **Social media** - Build presence on platforms where your customers are active
+3. **Partnerships** - Collaborate with complementary businesses
+4. **Referral programs** - Incentivize existing customers to bring new ones
+5. **SEO optimization** - Make sure people can find you when searching online
+
+Focus on one channel first, master it, then expand to others.`;
+  }
+  
+  // Default business advice
+  return `Here's some general startup advice:
+
+1. **Start with the problem** - Make sure you're solving a real pain point
+2. **Know your customer** - Understand who you're building for
+3. **Keep it simple** - Build the minimum viable product first
+4. **Get feedback early** - Talk to users before building everything
+5. **Focus on revenue** - Make sure your business model works
+
+Remember: most successful startups pivot from their original idea based on customer feedback.`;
+}
 });
 
 // Registration endpoint
