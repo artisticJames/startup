@@ -151,11 +151,14 @@ app.post('/api/ai-search', async (req, res) => {
   try {
     const { query } = req.body;
     
+    console.log('AI Search Request:', { query, hasApiKey: !!process.env.GEMINI_API_KEY });
+    
     if (!query || query.trim().length === 0) {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
     if (!process.env.GEMINI_API_KEY) {
+      console.log('GEMINI_API_KEY not found in environment');
       return res.status(500).json({ 
         error: 'AI search is not configured. Please set GEMINI_API_KEY environment variable.' 
       });
@@ -175,9 +178,13 @@ Keep the response professional, actionable, and focused on business/startup succ
 
     // Get the Gemini model
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log('Gemini model initialized');
 
     const result = await model.generateContent(prompt);
+    console.log('Gemini response received');
+    
     const aiResponse = result.response.text();
+    console.log('AI response length:', aiResponse.length);
 
     res.json({
       query: query,
@@ -187,10 +194,17 @@ Keep the response professional, actionable, and focused on business/startup succ
     });
 
   } catch (error) {
-    console.error('AI search error:', error);
+    console.error('AI search error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      stack: error.stack
+    });
+    
     res.status(500).json({ 
       error: 'AI search failed. Please try again later.',
-      details: error.message 
+      details: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
     });
   }
 });
