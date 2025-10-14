@@ -240,93 +240,186 @@ app.post('/api/ai-search', async (req, res) => {
   }
 });
 
-// Fallback business advice function
+// Enhanced business advice function with better matching
 function getFallbackBusinessAdvice(query) {
-  const queryLower = query.toLowerCase();
+  const queryLower = query.toLowerCase().trim();
   
-  // More comprehensive keyword matching for better search
-  if (queryLower.includes('validate') || queryLower.includes('idea') || queryLower.includes('test') || queryLower.includes('prove')) {
-    return `To validate your startup idea:
+  // Handle specific questions and topics
+  if (queryLower.includes('validate') || queryLower.includes('idea') || queryLower.includes('test') || queryLower.includes('prove') || queryLower.includes('check')) {
+    return `**Idea Validation Strategy:**
 
-1. **Talk to potential customers** - Interview 50+ people who would use your product
-2. **Build a simple MVP** - Create the simplest version that solves the core problem
-3. **Test pricing** - See if people will actually pay for your solution
-4. **Analyze competition** - Research existing solutions and find your unique angle
-5. **Measure demand** - Use surveys, landing pages, or pre-orders to gauge interest
+To validate your startup idea effectively:
 
-The key is getting real feedback from real users, not just friends and family.`;
+🎯 **Customer Discovery**
+• Interview 50+ potential customers face-to-face
+• Ask about their current pain points and solutions
+• Understand their willingness to pay
+
+📊 **Market Research**
+• Analyze competitors and their pricing
+• Identify market size and growth potential
+• Find gaps in existing solutions
+
+🧪 **Build & Test**
+• Create a simple landing page with signup
+• Build an MVP with core features only
+• Test pricing with real customers
+
+💡 **Key Insight:** Most successful startups pivot based on customer feedback, not assumptions.`;
   }
   
-  if (queryLower.includes('funding') || queryLower.includes('raise') || queryLower.includes('invest') || queryLower.includes('money') || queryLower.includes('capital')) {
-    return `Raising startup funding:
+  if (queryLower.includes('funding') || queryLower.includes('raise') || queryLower.includes('invest') || queryLower.includes('money') || queryLower.includes('capital') || queryLower.includes('investor')) {
+    return `**Startup Funding Guide:**
 
-1. **Bootstrap first** - Use your own money and revenue to prove the concept
-2. **Prepare your pitch** - Create a compelling story about the problem and solution
-3. **Network actively** - Attend startup events, join accelerators, connect on LinkedIn
-4. **Start with angels** - Individual investors are often easier to reach than VCs
-5. **Show traction** - Demonstrate user growth, revenue, or other key metrics
+💰 **Funding Stages**
+• **Bootstrap:** Use personal savings and revenue
+• **Friends & Family:** $10K-$100K for early development
+• **Angel Investors:** $100K-$1M for product-market fit
+• **VC Series A:** $1M+ for scaling
 
-Remember: investors invest in people and traction, not just ideas.`;
+🎯 **Preparation Checklist**
+• Clear problem-solution fit
+• Proven traction (users, revenue, growth)
+• Strong founding team
+• Scalable business model
+
+📈 **Pitch Essentials**
+• 10-slide deck maximum
+• Demo your product live
+• Show clear revenue projections
+• Highlight competitive advantages
+
+💡 **Pro Tip:** Investors invest in people and traction, not just ideas.`;
   }
   
-  if (queryLower.includes('marketing') || queryLower.includes('customer') || queryLower.includes('promote') || queryLower.includes('advertise') || queryLower.includes('sell')) {
-    return `Startup marketing strategies:
+  if (queryLower.includes('marketing') || queryLower.includes('customer') || queryLower.includes('promote') || queryLower.includes('advertise') || queryLower.includes('sell') || queryLower.includes('growth')) {
+    return `**Startup Marketing Playbook:**
 
-1. **Content marketing** - Create valuable content that attracts your target audience
-2. **Social media** - Build presence on platforms where your customers are active
-3. **Partnerships** - Collaborate with complementary businesses
-4. **Referral programs** - Incentivize existing customers to bring new ones
-5. **SEO optimization** - Make sure people can find you when searching online
+🚀 **Growth Strategies**
+• **Content Marketing:** Blog, videos, podcasts
+• **Social Media:** Build community on relevant platforms
+• **SEO:** Optimize for search visibility
+• **Partnerships:** Collaborate with complementary businesses
 
-Focus on one channel first, master it, then expand to others.`;
+📊 **Customer Acquisition**
+• **Referral Programs:** Incentivize existing customers
+• **Influencer Marketing:** Partner with industry experts
+• **Paid Advertising:** Start small, scale what works
+• **Events:** Attend and speak at industry conferences
+
+🎯 **Focus Strategy**
+• Master one channel before expanding
+• Track customer acquisition cost (CAC)
+• Measure lifetime value (LTV)
+• Aim for LTV:CAC ratio of 3:1 or higher`;
   }
   
-  if (queryLower.includes('build') || queryLower.includes('create') || queryLower.includes('develop') || queryLower.includes('product') || queryLower.includes('mvp')) {
-    return `Building your startup product:
+  if (queryLower.includes('build') || queryLower.includes('create') || queryLower.includes('develop') || queryLower.includes('product') || queryLower.includes('mvp') || queryLower.includes('app')) {
+    return `**Product Development Framework:**
 
-1. **Start with the problem** - Clearly define the pain point you're solving
-2. **Build an MVP** - Create the minimum viable product with core features only
-3. **Get user feedback** - Test with real users early and often
-4. **Iterate quickly** - Make improvements based on feedback
-5. **Focus on one feature** - Don't try to build everything at once
+🛠️ **MVP Strategy**
+• Start with one core feature
+• Solve the most important problem first
+• Build for your first 100 users
+• Get feedback before adding features
 
-Remember: perfect is the enemy of good. Ship early, learn fast.`;
+⚡ **Development Process**
+• **Week 1-2:** Define core features
+• **Week 3-4:** Build basic functionality
+• **Week 5-6:** Test with real users
+• **Week 7-8:** Iterate based on feedback
+
+🎯 **Success Metrics**
+• User engagement and retention
+• Time to value for new users
+• Customer satisfaction scores
+• Feature usage analytics
+
+💡 **Remember:** Perfect is the enemy of good. Ship early, learn fast.`;
   }
   
-  if (queryLower.includes('team') || queryLower.includes('hire') || queryLower.includes('employee') || queryLower.includes('cofounder')) {
-    return `Building your startup team:
+  if (queryLower.includes('team') || queryLower.includes('hire') || queryLower.includes('employee') || queryLower.includes('cofounder') || queryLower.includes('recruit')) {
+    return `**Building Your Startup Team:**
 
-1. **Start with co-founders** - Find people who complement your skills
-2. **Hire for culture fit** - Skills can be learned, attitude is harder to change
-3. **Start small** - Hire only when you absolutely need to
-4. **Use contractors first** - Test roles before making full-time hires
-5. **Create clear roles** - Define responsibilities and expectations
+👥 **Hiring Strategy**
+• **Co-founders:** Find complementary skills
+• **Early hires:** Culture fit over experience
+• **Contractors first:** Test roles before full-time
+• **Remote-friendly:** Access global talent pool
 
-Remember: your first hires will shape your company culture.`;
+🎯 **Key Roles to Fill**
+• **Technical:** Developers, designers
+• **Business:** Sales, marketing, operations
+• **Advisors:** Industry experts and mentors
+
+📋 **Hiring Process**
+• Define clear job descriptions
+• Test skills with practical tasks
+• Check references thoroughly
+• Offer equity to key hires
+
+💡 **Culture Tip:** Your first 10 hires will define your company culture.`;
   }
   
-  if (queryLower.includes('revenue') || queryLower.includes('profit') || queryLower.includes('business model') || queryLower.includes('monetize')) {
-    return `Startup revenue strategies:
+  if (queryLower.includes('revenue') || queryLower.includes('profit') || queryLower.includes('business model') || queryLower.includes('monetize') || queryLower.includes('pricing')) {
+    return `**Revenue & Business Models:**
 
-1. **Choose your model** - Subscription, marketplace, freemium, or one-time sales
-2. **Test pricing** - Start high and adjust based on customer feedback
-3. **Focus on value** - Price based on value delivered, not cost to build
-4. **Start charging early** - Don't wait until you're "ready"
-5. **Track key metrics** - Revenue, customer acquisition cost, lifetime value
+💰 **Popular Revenue Models**
+• **Subscription:** Recurring monthly/yearly fees
+• **Marketplace:** Commission on transactions
+• **Freemium:** Free tier + premium features
+• **One-time:** Single purchase products
 
-Remember: revenue solves most startup problems.`;
+📊 **Pricing Strategy**
+• Start high and adjust down
+• Price based on value delivered
+• Test different price points
+• Consider tiered pricing options
+
+🎯 **Revenue Metrics**
+• Monthly Recurring Revenue (MRR)
+• Customer Acquisition Cost (CAC)
+• Lifetime Value (LTV)
+• Churn rate and retention
+
+💡 **Golden Rule:** Revenue solves most startup problems.`;
   }
   
-  // Enhanced default advice for any query
-  return `Here's some general startup advice based on your question:
+  if (queryLower.includes('why') || queryLower.includes('what') || queryLower.includes('how') || queryLower.includes('when') || queryLower.includes('where')) {
+    return `**Startup Success Framework:**
 
-1. **Start with the problem** - Make sure you're solving a real pain point
-2. **Know your customer** - Understand who you're building for
-3. **Keep it simple** - Build the minimum viable product first
-4. **Get feedback early** - Talk to users before building everything
-5. **Focus on revenue** - Make sure your business model works
+🎯 **The "Why" Behind Startups**
+• **Problem:** What pain point are you solving?
+• **Solution:** How does your product help?
+• **Market:** Who will pay for this solution?
+• **Timing:** Why now vs. later?
 
-Remember: most successful startups pivot from their original idea based on customer feedback.`;
+🚀 **Success Factors**
+• **Team:** Right people with complementary skills
+• **Product:** Something people actually want
+• **Market:** Large enough opportunity
+• **Execution:** Ability to deliver results
+
+💡 **Key Insight:** Most startups fail because they build something nobody wants, not because of technical issues.`;
+  }
+  
+  // Default response for any other query
+  return `**Startup Success Guide:**
+
+🎯 **Core Principles**
+• **Start with the problem** - Solve real pain points
+• **Know your customer** - Build for specific users
+• **Keep it simple** - MVP first, features later
+• **Get feedback early** - Talk to users constantly
+• **Focus on revenue** - Money validates everything
+
+🚀 **Next Steps**
+• Validate your idea with 50+ customer interviews
+• Build a simple MVP in 2-4 weeks
+• Get your first 10 paying customers
+• Iterate based on their feedback
+
+💡 **Remember:** Most successful startups pivot from their original idea based on customer feedback.`;
 }
 
 // Registration endpoint

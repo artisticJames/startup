@@ -302,9 +302,39 @@ const UIEffects = {
       const loadingDiv = document.createElement('div');
       loadingDiv.id = 'ai-search-loading';
       loadingDiv.innerHTML = `
-        <div style="padding: 20px; text-align: center; background: #f8f9fa; border-radius: 8px; margin: 10px 0;">
-          <div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #1f7a4c; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite;"></div>
-          <p style="margin: 10px 0 0; color: #6d7e78;">AI is analyzing your business question...</p>
+        <div style="
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          margin: 16px 0;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        ">
+          <div style="
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #1f7a4c, #2d8f5f);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+          ">🤖</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="
+              width: 16px;
+              height: 16px;
+              border: 2px solid #e5e7eb;
+              border-top: 2px solid #1f7a4c;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            "></div>
+            <span style="color: #6b7280; font-size: 14px;">AI is thinking...</span>
+          </div>
         </div>
       `;
       
@@ -318,21 +348,66 @@ const UIEffects = {
       const resultsDiv = document.createElement('div');
       resultsDiv.id = 'ai-search-results';
       resultsDiv.innerHTML = `
-        <div style="background: linear-gradient(135deg, #1f7a4c, #2d8f5f); color: white; padding: 20px; border-radius: 12px; margin: 10px 0; box-shadow: 0 4px 12px rgba(31, 122, 76, 0.3); max-width: 100%; max-height: 400px; overflow-y: auto;">
-          <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <div style="background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px; margin-right: 12px;">
-              🤖
-            </div>
+        <div style="
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          margin: 16px 0;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          max-width: 100%;
+          overflow: hidden;
+        ">
+          <!-- Header -->
+          <div style="
+            background: #f9fafb;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          ">
+            <div style="
+              width: 32px;
+              height: 32px;
+              background: linear-gradient(135deg, #1f7a4c, #2d8f5f);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 16px;
+            ">🤖</div>
             <div>
-              <h3 style="margin: 0; font-size: 18px; font-weight: 600;">AI Business Advisor</h3>
-              <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Search: "${data.query}"</p>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">AI Business Advisor</h3>
+              <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;">${new Date(data.timestamp).toLocaleTimeString()}</p>
             </div>
           </div>
-          <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; line-height: 1.6; max-height: 300px; overflow-y: auto;">
-            ${data.response.replace(/\n/g, '<br>')}
+          
+          <!-- Content -->
+          <div style="
+            padding: 20px;
+            line-height: 1.6;
+            color: #374151;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 14px;
+          ">
+            ${data.response.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f7a4c;">$1</strong>')}
           </div>
-          <div style="margin-top: 12px; font-size: 12px; opacity: 0.8;">
-            Powered by Google Gemini • ${new Date(data.timestamp).toLocaleTimeString()}
+          
+          <!-- Footer -->
+          <div style="
+            background: #f9fafb;
+            padding: 12px 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          ">
+            <span>Query: "${data.query}"</span>
+            <span>Powered by AI</span>
           </div>
         </div>
       `;
